@@ -1,0 +1,16 @@
+[project]
+name = "library-management-system"
+version = "0.1.0"
+requires-python = ">= 3.12"
+dependencies = [
+    "django==5.1.2",
+]
+
+[tool.optional-dependencies]
+dev = [
+    "python-lsp-server",
+    "pylsp_mypy",
+    "pyls_isort",
+    "flake8",
+    "pylint",
+]

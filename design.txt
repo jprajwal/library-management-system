@@ -1,0 +1,111 @@
+Features
+- maintain and manage book inventory
+- rent books to members
+- librarian role that can authorize the book rent
+- receive back rented books and charge amount to the members for the rented period.
+- send email notification to members when due date is fast approaching.
+
+Design
+- Model
+    - Book
+        - data
+            - id
+            - title
+            - authors
+            - publishers
+            - rent_cost
+            - max_rent_period
+    - BookCopy
+        - data
+            - id
+            - book_id
+    - BookRent
+        - data
+            - id
+            - member_id
+            - bookcopy_id
+            - start_date
+            - due_date
+        - operations
+            - get_duedate()
+            - is_past_duedate()
+    - Member
+        - data
+            - email_id
+        - operations
+            - take_books()
+            - get_rented_books()
+    - Invoice
+        - data
+            - cost_components
+            - tax_components
+            - discounts
+            - total_cost
+    - Payment
+        - data
+            - id
+            - amount
+            - timestamp
+            - member_id
+            - transaction_group
+    - TransactionGroup
+        - data
+            - id
+            - list_of_transactions
+            - payment_id
+            - timestamp
+            - member_id
+            - status
+    - Transaction
+        - data
+            - id
+            - type
+            - member_id
+            - bookcopy_id
+            - timestamp
+            - tgid
+- Controller
+    - Librarian
+        - operations
+            - checkout_books(inventory, books, member)
+            - return_rented_books(inventory, books, member)
+            - add_book(book, count)
+            - renew_rented_books(books, member)
+    - BookCatalog
+        - operations
+            - browse()
+            - search()
+            - add_book()
+    - BookInventory
+        - operations
+            - checkout(books)
+            - checkin(books)
+    - BookGSTTaxScheme
+        - operations
+            - calculate(cost_components) -> list[TaxComputation]
+    - PaymentManager
+        - operations
+            - get_payment(amount)
+    - BookRentCostCalculator
+        - operations
+            - calculate(books)
+            - generate_invoice()
+    - DueDateTracker
+        - operations
+            - scan()
+    - EmailNotifier
+        - operations
+            - send_email(destination, subject, body, attachments)
+- Interface
+    - TaxScheme
+        - operations
+            - calculate(cost_components) -> list[TaxComputation]
+    - TaxComputation
+        - operations
+            - get_cost_component()
+            - get_tax_component()
+            - get_cost()
+    - CostComponent
+        - operations
+            - get_product_category()
+            - get_cost()
