@@ -8,6 +8,7 @@ class Author(models.Model):
 
 class Book(models.Model):
     title = models.TextField()
+    author = models.ManyToManyField(Author, related_name="books")
     rent_cost = models.IntegerField()
     max_rent_period = models.DurationField()
 
