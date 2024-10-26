@@ -1,5 +1,4 @@
 # from django.shortcuts import render
-from django.core import serializers
 from django.views import View
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +7,7 @@ from django.utils.decorators import method_decorator
 import json
 
 from .controllers import BookCatalog, BookCatalogSearchCriteria
+
 
 # Create your views here.
 @method_decorator(csrf_exempt, name='dispatch')
@@ -20,8 +20,14 @@ class CatalogBooksView(View):
             data = BookCatalog.search(BookCatalogSearchCriteria.TITLE, queries["title"])
         else:
             data = BookCatalog.browse()
-        data = serializers.serialize('json', data)
-        return HttpResponse(data, content_type="application/json")
+        return HttpResponse(json.dumps([
+                {
+                    "title": book.title,
+                    "author": book.get_author_ids(),
+                    "rent_cost": book.rent_cost,
+                    "max_rent_period": book.get_max_rent_period_as_int(),
+                } for book in data
+        ]))
 
     def post(self, request) -> HttpResponse:
         data = json.loads(request.body)

@@ -1,4 +1,5 @@
 from django.db import models
+import json
 
 
 # Create your models here.
@@ -11,6 +12,15 @@ class Book(models.Model):
     author = models.ManyToManyField(Author, related_name="books")
     rent_cost = models.IntegerField()
     max_rent_period = models.DurationField()
+
+    def __str__(self) -> str:
+        return str(self.title)
+
+    def get_author_ids(self) -> list[int]:
+        return [i for ids in self.author.values_list("id") for i in ids]
+
+    def get_max_rent_period_as_int(self) -> int:
+        return int(self.max_rent_period.days)
 
 
 class BookCopy(models.Model):
