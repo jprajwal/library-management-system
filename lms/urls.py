@@ -20,5 +20,5 @@ from library import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('library/book_catalog', views.library_book_catalog_browse, name="book-catalog-browse"),
+    path('library/catalog/books', views.CatalogBooksView.as_view(), name="book-catalog-browse"),
 ]
