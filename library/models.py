@@ -26,6 +26,8 @@ class Book(models.Model):
 class BookCopy(models.Model):
     book_id = models.ForeignKey(Book, on_delete=models.CASCADE)
 
+    def get_book_id(self) -> int:
+        return self.book_id.id
 
 class Member(models.Model):
     name = models.TextField()
