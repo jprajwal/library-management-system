@@ -29,6 +29,7 @@ class BookCopy(models.Model):
     def get_book_id(self) -> int:
         return self.book_id.id
 
+
 class Member(models.Model):
     name = models.TextField()
     email_id = models.EmailField()

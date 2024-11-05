@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('library/books', views.BooksView.as_view(), name="library-books"),
     path('library/bookcopies', views.BookCopiesView.as_view(), name="library-bookcopies"),
+    path('library/bookcopies/<int:bookcopy_id>', views.BookCopyView.as_view(), name="library-bookcopy"),
 ]

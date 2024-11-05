@@ -55,3 +55,8 @@ class BookCopiesController:
             raise Exception("book copies cannot be updated since they don't exist")
         for _ in range(count):
             BookCopy.objects.create(book_id=Book.objects.get(id=book_id))
+
+    @staticmethod
+    def delete_bookcopy(bookcopy_id: int) -> None:
+        copy = BookCopy.objects.get(pk=bookcopy_id)
+        copy.delete()

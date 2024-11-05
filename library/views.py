@@ -1,12 +1,14 @@
 # from django.shortcuts import render
-from django.views import View
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-
 import json
 
-from .controllers import BooksController, BooksSearchCriteria, BookCopiesController
+from django.http import (HttpResponse, HttpResponseBadRequest,
+                         HttpResponseNotFound, HttpResponseServerError)
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+
+from .controllers import (BookCopiesController, BooksController,
+                          BooksSearchCriteria)
 
 
 # Create your views here.
@@ -67,9 +69,27 @@ class BookCopiesView(View):
                 }),
                 content_type="application/json",
             )
-            
 
     def patch(self, request) -> HttpResponse:
         data = json.loads(request.body)
         BookCopiesController.add_copies(book_id=data["book_id"], count=data["count"])
         return HttpResponse(json.dumps({"status": "OK"}), content_type="application/json")
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class BookCopyView(View):
+    def delete(self, request, bookcopy_id: int) -> HttpResponse:
+        try:
+            BookCopiesController.delete_bookcopy(bookcopy_id) 
+        except Exception as exc:
+            return HttpResponseNotFound(
+                json.dumps({
+                    "status": "FAILED",
+                    "error": str(exc),
+                }),
+                content_type="application/json",
+            )
+        return HttpResponse(
+            json.dumps({"status": "OK"}),
+            content_type="application/json",
+        )
