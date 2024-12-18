@@ -8,13 +8,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="{%static 'styles/styles.css'%}">
 </head>
-<title>Library Management System</title>
+<title>LMS</title>
 
 <body>
         {% block body %}
         <header>
                 <img id="logo-image" src="{%static 'images/heading-image.jpg'%}" alt="LogoImage">
                 <h2 id="logo">LMS</h2>
+                <nav>
+                        <li><a href="/accounts/signup">Sign up</a></li>
+                        <li><a href="">Sign in</a></li>
+                </nav>
                 <!-- <div id="hamburger-menu">
                         <img src="{%static 'icons/hamburger-menu.png'%}" alt="Menu">
                 </div> -->

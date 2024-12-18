@@ -1,12 +1,14 @@
 import json
 
+from django.contrib.auth.models import User
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotFound,
     HttpResponseServerError,
 )
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -31,6 +33,21 @@ def index(request):
         )
 
     return render(request, template_name="index.html", context=context)
+
+
+def signup(request: HttpRequest):
+    if request.method == "GET":
+        return render(request, template_name="signup.html")
+    username = request.POST["username"]
+    password = request.POST["password"]
+    email = request.POST["email"]
+    try:
+        _ = User.objects.create_user(username, email, password)
+        return redirect("login")
+    except Exception as exc:
+        return HttpResponseServerError(
+            json.dumps({"status": "FAILED", "error_msg": str(exc)})
+        )
 
 
 # Create your views here.

@@ -1,0 +1,26 @@
+input[type="email"] {
+    width: 300px;
+    height: 30px;
+    border: none;
+    border-bottom: 1px solid #f54242;
+    margin: 20px 0px;
+    display: block;
+}
+
+input[type="password"] {
+    width: 300px;
+    height: 30px;
+    border: none;
+    border-bottom: 1px solid #f54242;
+    display: block;
+    margin: 20px 0px;
+}
+
+input[type="text"] {
+    width: 300px;
+    height: 30px;
+    border: none;
+    border-bottom: 1px solid #f54242;
+    display: block;
+    margin: 20px 0px;
+}
