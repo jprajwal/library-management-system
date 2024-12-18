@@ -1,0 +1,51 @@
+#logo {
+    color: red;
+}
+
+/*
+#hamburger-menu {
+    scale: 40%;
+    position: fixed;
+    right: 10px;
+    border-radius: 45px;
+    padding: 20px;
+    background-color: none;
+}
+
+@keyframes orb {
+    from {
+        background-color: none;
+    }
+
+    to {
+        background-color: #f76c6c;
+    }
+}
+
+#hamburger-menu:hover {
+    animation-name: orb;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+
+#hamburger-menu:active {
+    animation-fill-mode: none;
+    background-color: #f06161;
+}
+*/
+#logo-image {
+    width: 48px;
+    height: 48px;
+    margin: 5px;
+    border-radius: 45px;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: inline-flex;
+    border-bottom: 2px solid red;
+    align-items: center;
+    padding: 3px 3px;
+}

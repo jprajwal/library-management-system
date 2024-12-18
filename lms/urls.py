@@ -19,6 +19,7 @@ from django.urls import path
 from library import views
 
 urlpatterns = [
+    path('', views.index, name="index"),
     path('admin/', admin.site.urls),
     path('library/books', views.BooksView.as_view(), name="library-books"),
     path('library/bookcopies', views.BookCopiesView.as_view(), name="library-bookcopies"),

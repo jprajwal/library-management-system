@@ -26,6 +26,9 @@ SECRET_KEY = 'django-insecure-g2&0mdl)z%no##in-%pkeh0)7njwi0+(c*bx2@y@l6tww(u97z
 DEBUG = True
 
 ALLOWED_HOSTS = []
+STATICFILES_DIRS = [
+    BASE_DIR / "static"
+]
 
 
 # Application definition
@@ -55,7 +58,9 @@ ROOT_URLCONF = 'lms.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            '/home/jprajwal/projects/python/library-management-system/templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

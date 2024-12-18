@@ -1,0 +1,26 @@
+{%load static%}
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{%static 'styles/styles.css'%}">
+</head>
+<title>Library Management System</title>
+
+<body>
+        {% block body %}
+        <header>
+                <img id="logo-image" src="{%static 'images/heading-image.jpg'%}" alt="LogoImage">
+                <h2 id="logo">LMS</h2>
+                <!-- <div id="hamburger-menu">
+                        <img src="{%static 'icons/hamburger-menu.png'%}" alt="Menu">
+                </div> -->
+
+        </header>
+        {% endblock %}
+</body>
+
+</html>
