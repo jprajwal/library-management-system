@@ -16,7 +16,8 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.contrib.auth.views import LoginView, LogoutView
+from django.urls import path
 
 from library import views
 
@@ -33,5 +34,10 @@ urlpatterns = [
         name="library-bookcopy",
     ),
     path("accounts/signup", views.signup, name="signup"),
-    path("accounts/", include("django.contrib.auth.urls")),
+    path(
+        "accounts/login",
+        view=LoginView.as_view(template_name="login.html"),
+        name="login",
+    ),
+    path("accounts/logout", view=LogoutView.as_view(), name="logout"),
 ]

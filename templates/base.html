@@ -15,10 +15,12 @@
         <header>
                 <img id="logo-image" src="{%static 'images/heading-image.jpg'%}" alt="LogoImage">
                 <h2 id="logo">LMS</h2>
+                {%block navigation%}
                 <nav>
                         <li><a href="/accounts/signup">Sign up</a></li>
-                        <li><a href="">Sign in</a></li>
+                        <li><a href="/accounts/login">Sign in</a></li>
                 </nav>
+                {% endblock %}
                 <!-- <div id="hamburger-menu">
                         <img src="{%static 'icons/hamburger-menu.png'%}" alt="Menu">
                 </div> -->

@@ -31,8 +31,10 @@ def index(request):
                 "count": book_copies_count,
             }
         )
-
-    return render(request, template_name="index.html", context=context)
+    if request.user.is_authenticated:
+        return render(request, template_name="loggedin_index.html", context=context)
+    else:
+        return render(request, template_name="index.html", context=context)
 
 
 def signup(request: HttpRequest):
