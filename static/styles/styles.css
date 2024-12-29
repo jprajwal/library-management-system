@@ -1,38 +1,22 @@
+:root {
+    --header-height: 65px;
+}
+
 #logo {
     color: red;
 }
 
-/*
-#hamburger-menu {
-    scale: 40%;
-    position: fixed;
-    right: 10px;
-    border-radius: 45px;
-    padding: 20px;
-    background-color: none;
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
-@keyframes orb {
-    from {
-        background-color: none;
-    }
-
-    to {
-        background-color: #f76c6c;
-    }
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
 }
 
-#hamburger-menu:hover {
-    animation-name: orb;
-    animation-duration: 0.5s;
-    animation-fill-mode: forwards;
-}
-
-#hamburger-menu:active {
-    animation-fill-mode: none;
-    background-color: #f06161;
-}
-*/
 #logo-image {
     width: 48px;
     height: 48px;
@@ -41,8 +25,9 @@
 
 header {
     top: 0;
+    height: var(--header-height);
     width: 100%;
-     display: inline-flex;
+    display: inline-flex;
     border-bottom: 2px solid red;
     align-items: center;
     padding: 3px 3px;
@@ -63,16 +48,45 @@ nav li {
     margin: 5px;
 }
 
+.flex-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - var(--header-height));
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#books-view {
+    flex: 5 0 auto;
+    background-color: pink;
+}
+
+#books-list {
+    padding: 0px;
+}
+
 #books-list li {
     list-style-type: none;
     display: flex;
-    margin: 5px;
-    padding: 3px;
     border-radius: 5px;
+    flex-direction: row;
 }
 
 #books-list li:hover {
     background-color: lightgray;
+}
+
+#book-info-container {
+    display: flex;
+    flex-direction: row;
+    flex: 4 0 90%;
+}
+
+#book-select-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 0 10%;
 }
 
 #book-image {
@@ -95,4 +109,20 @@ nav li {
 
 #book-info h2, p {
     margin: 4px;
+}
+
+#book-select {
+}
+
+#actions-view {
+    background-color: lightblue;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 0 0px;
+}
+
+#actions {
+    display: inline-flex;
+    width: 100%;
 }

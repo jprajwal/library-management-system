@@ -1,1 +1,60 @@
 {% extends "base.html" %}
+{%load static%}
+{% block styles %}
+<link rel="stylesheet" href="{%static 'styles/styles.css'%}">
+{% endblock %}
+{% block body %}
+{% block scripts %}
+        <script>
+                function toggleBGColor(element) {
+                        Array.from(element.getElementsByTagName("input")).map((e) => {
+                                if (e.tagName !== "INPUT" || e.getAttribute("type") != "checkbox") {
+                                        return;
+                                }
+                                const checkbox = e;
+                                if (checkbox.checked) {
+                                        element.style.backgroundColor = "red";
+                                } else {
+                                        element.style.backgroundColor = "";
+                                }
+                        });
+                }
+        </script>
+{% endblock %}
+<div id="lms-body" class="flex-container">
+        <section id="books-view">
+                <ul id="books-list">
+                {% for book in books %}
+                        <li onClick="toggleBGColor(this)">
+                                <div id="book-info-container">
+                                        <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
+                                        <div id="book-info">
+                                                <h2 id="book-title">{{book.title}}</h2>
+                                                <p id="book-description">{{book.authors}}</p>        
+                                        </div>
+                                </div>
+                                {% if user.is_authenticated %}
+                                <div id="book-select-container">
+                                        <input name="book-select" type="checkbox" value="{{book.id}}">
+                                </div>
+                                {% endif %}
+                        </li>
+                {% endfor %}
+                </ul>
+        </section>
+        <div id="actions-view">
+                <div id="actions">
+                        <form method="POST" action="/library/search">
+                                {% csrf_token %}
+                                <label for="searchby">Search by:</label>
+                                <select id="searchby" name="searchby">
+                                        <option value="author">Book author</option>
+                                        <option value="title">Book title</option>
+                                </select>
+                                <input type="text" placeholder="search" name="search-text" />
+                                <input type="submit" value="search" />
+                        </form>
+                </div>
+        </div>
+</div>
+{% endblock %}

@@ -31,10 +31,7 @@ def index(request):
                 "count": book_copies_count,
             }
         )
-    if request.user.is_authenticated:
-        return render(request, template_name="loggedin_index.html", context=context)
-    else:
-        return render(request, template_name="index.html", context=context)
+    return render(request, template_name="index.html", context=context)
 
 
 def signup(request: HttpRequest):
@@ -52,37 +49,32 @@ def signup(request: HttpRequest):
         )
 
 
-# Create your views here.
-@method_decorator(csrf_exempt, name="dispatch")
-class BooksView(View):
-    def get(self, request) -> HttpResponse:
-        queries = request.GET
-        if "author" in queries:
-            data = BooksController.search(BooksSearchCriteria.AUTHOR, queries["author"])
-        elif "title" in queries:
-            data = BooksController.search(BooksSearchCriteria.TITLE, queries["title"])
+class BooksSearchView(View):
+    def post(self, request) -> HttpResponse:
+        body = request.POST
+        if "searchby" in body:
+            criteria = (
+                BooksSearchCriteria.AUTHOR
+                if body["searchby"] == "author"
+                else BooksSearchCriteria.TITLE
+            )
+            data = BooksController.search(criteria, body["search-text"])
         else:
             data = BooksController.browse()
-        return HttpResponse(
-            json.dumps(
-                [
-                    {
-                        "title": book.title,
-                        "author": book.get_author_ids(),
-                        "rent_cost": book.rent_cost,
-                        "max_rent_period": book.get_max_rent_period_as_int(),
-                    }
-                    for book in data
-                ]
+        context = {"books": []}
+        for i, book in enumerate(data, 1):
+            book_copies_count = len(BookCopiesController.get(book_id=book.id))
+            authors = ", ".join(book.author.values_list("name", flat=True))
+            context["books"].append(
+                {
+                    "id": book.id,
+                    "slno": i,
+                    "title": book.title,
+                    "authors": authors,
+                    "count": book_copies_count,
+                }
             )
-        )
-
-    def post(self, request) -> HttpResponse:
-        data = json.loads(request.body)
-        BooksController.add_book(**data)
-        return HttpResponse(
-            json.dumps({"status": "OK"}), content_type="application/json"
-        )
+        return render(request, template_name="index.html", context=context)
 
 
 @method_decorator(csrf_exempt, name="dispatch")

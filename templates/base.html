@@ -5,48 +5,38 @@
 
 <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width,  initial-scale=1">
         <link rel="stylesheet" href="{%static 'styles/styles.css'%}">
+        {% block styles %}
+        {% endblock %}
+        {% block scripts %}
+        {% endblock %}
 </head>
 <title>LMS</title>
 
 <body>
-        {% block body %}
+        <div id="header">
         <header>
                 <img id="logo-image" src="{%static 'images/heading-image.jpg'%}" alt="LogoImage">
                 <h2 id="logo">LMS</h2>
                 {%block navigation%}
-                <nav>
-                        <li><a href="/accounts/signup">Sign up</a></li>
-                        <li><a href="/accounts/login">Sign in</a></li>
-                </nav>
+                {% if not user.is_authenticated %}
+                        <nav>
+                                <li><a href="/accounts/signup">Sign up</a></li>
+                                <li><a href="/accounts/login">Sign in</a></li>
+                        </nav>
+                {% else %}
+                        <nav>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit">Logout</button>
+                            </form>
+                        </nav>
+                {% endif %}
                 {% endblock %}
         </header>
-        <section>
-                <ul id="books-list">
-                        <li>
-                                <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
-                                <div id="book-info">
-                                        <h2 id="book-title">Harry Potter and the Sorcerer's Stone</h2>
-                                        <p id="book-description">Author: J.K. Rowling</p>        
-                                </div>
-                        </li>
-                        <li>
-                                <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
-                                <div id="book-info">
-                                        <h2 id="book-title">Harry Potter and the Sorcerer's Stone</h2>
-                                        <p id="book-description">Author: J.K. Rowling</p>        
-                                </div>
-                        </li>
-                        <li>
-                                <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
-                                <div id="book-info">
-                                        <h2 id="book-title">Harry Potter and the Sorcerer's Stone</h2>
-                                        <p id="book-description">Author: J.K. Rowling</p>        
-                                </div>
-                        </li>
-                </ul>
-        </section>
+        </div>
+        {% block body %}
         {% endblock %}
 </body>
 
