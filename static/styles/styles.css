@@ -3,7 +3,7 @@
 }
 
 #logo {
-    color: red;
+    color: maroon;
 }
 
 *, *::before, *::after {
@@ -58,7 +58,7 @@ nav li {
 
 #books-view {
     flex: 5 0 auto;
-    background-color: pink;
+    /*background-color: pink;*/
 }
 
 #books-list {
@@ -79,14 +79,14 @@ nav li {
 #book-info-container {
     display: flex;
     flex-direction: row;
-    flex: 4 0 90%;
+    flex: 5 0 95%;
 }
 
 #book-select-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 0 10%;
+    flex: 1 0 5%;
 }
 
 #book-image {
@@ -115,7 +115,7 @@ nav li {
 }
 
 #actions-view {
-    background-color: lightblue;
+    /*background-color: lightblue;*/
     display: flex;
     align-items: center;
     justify-content: center;

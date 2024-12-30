@@ -6,26 +6,65 @@
 {% block body %}
 {% block scripts %}
         <script>
-                function toggleBGColor(element) {
-                        Array.from(element.getElementsByTagName("input")).map((e) => {
-                                if (e.tagName !== "INPUT" || e.getAttribute("type") != "checkbox") {
-                                        return;
-                                }
-                                const checkbox = e;
-                                if (checkbox.checked) {
-                                        element.style.backgroundColor = "red";
-                                } else {
-                                        element.style.backgroundColor = "";
-                                }
-                        });
+                function toggleCheckoutButton(ev) {
+                        const booksList = ev.target;        
+                        console.log(ev.target);
                 }
+
+                function setupCheckoutButton() {
+                        const button = document.getElementById("checkout-button");
+                        document.checkoutButtonState = {
+                                selectedBooks: new Array()
+                        };
+                        const selectedBooks = document.checkoutButtonState.selectedBooks;
+                        button.addEventListener("click", () => console.log(`checkout ${selectedBooks}`));
+                        (Array.from(document.getElementsByName("book-select"))
+                                .forEach((e) => {
+                                        e.addEventListener(
+                                                "change", () => {
+                                                        if (e.checked && !selectedBooks.includes(e.value)) {
+                                                                selectedBooks.push(e.value);
+                                                        } else if (!e.checked && selectedBooks.includes(e.value)) {
+                                                                selectedBooks.splice(selectedBooks.indexOf(e.value), 1);
+                                                        }
+                                                        console.log("selectedBooks = " + selectedBooks);
+                                                        button.disabled = selectedBooks.length === 0;
+                                                });
+                                })
+                        );
+                }
+                function setupBooksListElement() {
+                        Array.from(document.getElementsByName("book-select"))
+                                .forEach((checkbox) => {
+                                        checkbox.addEventListener("change", (ev) => {
+                                                const li = ev.target.closest("li");
+                                                if (li === undefined) return;
+                                                if (ev.target.checked) {
+                                                        li.style.backgroundColor = "red";
+                                                } else {
+                                                        li.style.backgroundColor = "";
+                                                }
+                                        });
+                                });
+                }
+                function init() {
+                        setupCheckoutButton();
+                        setupBooksListElement();
+                }
+
+                window.addEventListener("load", init);
         </script>
 {% endblock %}
 <div id="lms-body" class="flex-container">
         <section id="books-view">
                 <ul id="books-list">
                 {% for book in books %}
-                        <li onClick="toggleBGColor(this)">
+                        <li>
+                                {% if user.is_authenticated %}
+                                <div id="book-select-container">
+                                        <input name="book-select" type="checkbox" value="{{book.id}}">
+                                </div>
+                                {% endif %}
                                 <div id="book-info-container">
                                         <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
                                         <div id="book-info">
@@ -33,11 +72,6 @@
                                                 <p id="book-description">{{book.authors}}</p>        
                                         </div>
                                 </div>
-                                {% if user.is_authenticated %}
-                                <div id="book-select-container">
-                                        <input name="book-select" type="checkbox" value="{{book.id}}">
-                                </div>
-                                {% endif %}
                         </li>
                 {% endfor %}
                 </ul>
@@ -51,9 +85,10 @@
                                         <option value="author">Book author</option>
                                         <option value="title">Book title</option>
                                 </select>
-                                <input type="text" placeholder="search" name="search-text" />
-                                <input type="submit" value="search" />
+                                <input type="text" placeholder="search" name="search-text">
+                                <input type="submit" value="search">
                         </form>
+                        <input id="checkout-button" type="button" value="checkout" disabled>
                 </div>
         </div>
 </div>
