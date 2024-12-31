@@ -84,7 +84,7 @@ def get_cart(request: HttpRequest) -> HttpResponse:
 
 
 def add_book_to_cart(request: HttpRequest) -> HttpResponse:
-    body = request.POST
+    body = json.loads(request.body.decode("utf-8"))
     if "book-id" not in body:
         return HttpResponseBadRequest(
             render_to_string(
@@ -97,7 +97,7 @@ def add_book_to_cart(request: HttpRequest) -> HttpResponse:
         )
     copies = BookCopiesController.get(body["book-id"])
     if len(copies) == 0:
-        return HttpResponse("Book Copies not found")
+        return HttpResponseNotFound("Book Copies not found")
     cart = Cart(book_copy=copies[0])
     cart.save()
     return redirect(to="index")

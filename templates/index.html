@@ -7,28 +7,27 @@
 {% block scripts %}
 {% endblock %}
 <div id="lms-body" class="flex-container">
-        <section id="books-view">
+        <div id="books-view">
                 <ul id="books-list">
                 {% for book in books %}
                         <li>
-                                <form id="book-form" action="/library/cart/book" method="POST">
-                                        {%csrf_token%}
-                                        <div id="book-info-container">
-                                                <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
-                                                <div id="book-info">
-                                                        <h2 id="book-title">{{book.title}}</h2>
-                                                        <p id="book-description">{{book.authors}}</p>  
-                                                </div>
+                                <div id="book-info-container">
+                                        <img id="book-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
+                                        <div id="book-info">
+                                                <h2 id="book-title">{{book.title}}</h2>
+                                                <p id="book-description">{{book.authors}}</p>  
                                         </div>
-                                        <div id="book-actions-container">
-                                                <input type="text" name="book-id" value="{{book.id}}" hidden>
-                                                <input type="submit" value="add to cart">
-                                        </div>
-                                </form>
+                                </div>
+                                {% if user.is_authenticated %}
+                                <div id="book-actions-container">
+                                        <input type="button" value="add to cart" onClick="addToCart(this, {{book.id}})">
+                                </div>
+                                {% endif %}
                         </li>
                 {% endfor %}
                 </ul>
-        </section>
+        </div>
+        <div id="message-console"></div>
         <div id="actions-view">
                 <div id="actions">
                         <form method="POST" action="/library/books/search">
@@ -47,4 +46,36 @@
                 </div>
         </div>
 </div>
+<script src="{% static '/js/utils.js' %}"></script>
+<script>
+        function addToCart(element, bookid) {
+                const csrftoken = getCookie("csrftoken");
+                console.log(`csrf token: ${csrftoken}`);
+                fetch(
+                        "/library/cart/book",
+                        {
+                                "method": "POST",
+                                "body": JSON.stringify({
+                                        "book-id": bookid,
+                                }),
+                                "headers": {
+                                        "X-CSRFToken": csrftoken,
+                                        "Content-Type": "applicaiton/json",
+
+                                },
+                        }
+                ).then((resp) => {
+                        console.log(resp.ok); 
+                        if (!resp.ok) {
+                                resp.text().then((body) => {
+                                        document.getElementById("message-console").innerHTML = body;
+                                });
+                                return;
+                        }
+                        document.getElementById("message-console").innerHTML += `<br> bookid=${bookid} added`;
+                }).catch((err) => {
+                        console.error(err);
+                }); 
+        }
+</script>
 {% endblock %}
