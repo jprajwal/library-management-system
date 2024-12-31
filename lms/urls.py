@@ -24,7 +24,9 @@ from library import views
 urlpatterns = [
     path("", views.index, name="index"),
     path("admin/", admin.site.urls),
-    path("library/search", views.BooksSearchView.as_view(), name="library-search"),
+    path("library/books/search", views.search_books, name="library-books-search"),
+    path("library/cart", views.get_cart, name="library-cart"),
+    path("library/cart/book", views.add_book_to_cart, name="add-book-to-cart"),
     path(
         "library/bookcopies", views.BookCopiesView.as_view(), name="library-bookcopies"
     ),

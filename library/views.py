@@ -12,7 +12,9 @@ from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from django.template.loader import render_to_string
 
+from .models import Cart
 from .controllers import BookCopiesController, BooksController, BooksSearchCriteria
 
 
@@ -49,32 +51,56 @@ def signup(request: HttpRequest):
         )
 
 
-class BooksSearchView(View):
-    def post(self, request) -> HttpResponse:
-        body = request.POST
-        if "searchby" in body:
-            criteria = (
-                BooksSearchCriteria.AUTHOR
-                if body["searchby"] == "author"
-                else BooksSearchCriteria.TITLE
-            )
-            data = BooksController.search(criteria, body["search-text"])
-        else:
-            data = BooksController.browse()
-        context = {"books": []}
-        for i, book in enumerate(data, 1):
-            book_copies_count = len(BookCopiesController.get(book_id=book.id))
-            authors = ", ".join(book.author.values_list("name", flat=True))
-            context["books"].append(
-                {
-                    "id": book.id,
-                    "slno": i,
-                    "title": book.title,
-                    "authors": authors,
-                    "count": book_copies_count,
+def search_books(request: HttpRequest) -> HttpResponse:
+    body = request.POST
+    if "searchby" in body:
+        criteria = (
+            BooksSearchCriteria.AUTHOR
+            if body["searchby"] == "author"
+            else BooksSearchCriteria.TITLE
+        )
+        data = BooksController.search(criteria, body["search-text"])
+    else:
+        data = BooksController.browse()
+    context = {"books": []}
+    for i, book in enumerate(data, 1):
+        book_copies_count = len(BookCopiesController.get(book_id=book.id))
+        authors = ", ".join(book.author.values_list("name", flat=True))
+        context["books"].append(
+            {
+                "id": book.id,
+                "slno": i,
+                "title": book.title,
+                "authors": authors,
+                "count": book_copies_count,
+            }
+        )
+    return render(request, template_name="index.html", context=context)
+
+
+def get_cart(request: HttpRequest) -> HttpResponse:
+    context = {}
+    return render(request, template_name="cart.html", context=context)
+
+
+def add_book_to_cart(request: HttpRequest) -> HttpResponse:
+    body = request.POST
+    if "book-id" not in body:
+        return HttpResponseBadRequest(
+            render_to_string(
+                template_name="error.html",
+                context={
+                    "name": "HttpBadRequest",
+                    "description": "book-id parameter is missing in the request body"
                 }
             )
-        return render(request, template_name="index.html", context=context)
+        )
+    copies = BookCopiesController.get(body["book-id"])
+    if len(copies) == 0:
+        return HttpResponse("Book Copies not found")
+    cart = Cart(book_copy=copies[0])
+    cart.save()
+    return redirect(to="index")
 
 
 @method_decorator(csrf_exempt, name="dispatch")

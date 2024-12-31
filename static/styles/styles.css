@@ -79,14 +79,21 @@ nav li {
 #book-info-container {
     display: flex;
     flex-direction: row;
-    flex: 5 0 95%;
+    flex: 5 5 95%;
 }
 
-#book-select-container {
+#book-actions-container {
+    margin: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 0 5%;
+    flex: 1 1 5%;
+}
+
+#book-form {
+    display: flex;
+    flex-direction: row;
+    flex: 1 0 100%;
 }
 
 #book-image {
@@ -109,9 +116,6 @@ nav li {
 
 #book-info h2, p {
     margin: 4px;
-}
-
-#book-select {
 }
 
 #actions-view {

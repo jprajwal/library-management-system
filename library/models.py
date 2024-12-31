@@ -40,3 +40,7 @@ class BookRent(models.Model):
     bookcopy_id = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
     start_date = models.DateField()
     due_date = models.DateField()
+
+
+class Cart(models.Model):
+    book_copy = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
