@@ -23,18 +23,11 @@ from library import views
 
 urlpatterns = [
     path("", views.index, name="index"),
+
+    # admin/
     path("admin/", admin.site.urls),
-    path("library/books/search", views.search_books, name="library-books-search"),
-    path("library/cart", views.get_cart, name="library-cart"),
-    path("library/cart/book", views.add_book_to_cart, name="add-book-to-cart"),
-    path(
-        "library/bookcopies", views.BookCopiesView.as_view(), name="library-bookcopies"
-    ),
-    path(
-        "library/bookcopies/<int:bookcopy_id>",
-        views.BookCopyView.as_view(),
-        name="library-bookcopy",
-    ),
+
+    # accounts/
     path("accounts/signup", views.signup, name="signup"),
     path(
         "accounts/login",
@@ -42,4 +35,10 @@ urlpatterns = [
         name="login",
     ),
     path("accounts/logout", view=LogoutView.as_view(), name="logout"),
+
+    # library/
+    path(
+        "library/members/<int:userid>/cartitems",
+        view=views.CartItemsView.as_view(), name="cart-items",
+    )
 ]

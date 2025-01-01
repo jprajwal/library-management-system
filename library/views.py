@@ -3,19 +3,15 @@ import json
 from django.contrib.auth.models import User
 from django.http import (
     HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseNotFound,
     HttpResponseServerError,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseBadRequest,
 )
 from django.shortcuts import redirect, render
-from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.template.loader import render_to_string
 
-from .models import Cart
-from .controllers import BookCopiesController, BooksController, BooksSearchCriteria
+from .controllers import BookCopiesController, BooksController, CartItemsController
 
 
 def index(request):
@@ -51,130 +47,32 @@ def signup(request: HttpRequest):
         )
 
 
-def search_books(request: HttpRequest) -> HttpResponse:
-    body = request.POST
-    if "searchby" in body:
-        criteria = (
-            BooksSearchCriteria.AUTHOR
-            if body["searchby"] == "author"
-            else BooksSearchCriteria.TITLE
-        )
-        data = BooksController.search(criteria, body["search-text"])
-    else:
-        data = BooksController.browse()
-    context = {"books": []}
-    for i, book in enumerate(data, 1):
-        book_copies_count = len(BookCopiesController.get(book_id=book.id))
-        authors = ", ".join(book.author.values_list("name", flat=True))
-        context["books"].append(
-            {
-                "id": book.id,
-                "slno": i,
-                "title": book.title,
-                "authors": authors,
-                "count": book_copies_count,
-            }
-        )
-    return render(request, template_name="index.html", context=context)
-
-
-def get_cart(request: HttpRequest) -> HttpResponse:
-    context = {}
-    return render(request, template_name="cart.html", context=context)
-
-
-def add_book_to_cart(request: HttpRequest) -> HttpResponse:
-    body = json.loads(request.body.decode("utf-8"))
-    if "book-id" not in body:
-        return HttpResponseBadRequest(
-            render_to_string(
-                template_name="error.html",
-                context={
-                    "name": "HttpBadRequest",
-                    "description": "book-id parameter is missing in the request body"
-                }
+# /library/members/<str:username>/cartitems
+class CartItemsView(View):
+    def get(self, request: HttpRequest, userid: int) -> HttpResponse:
+        if userid != request.user.id:
+            return HttpResponseForbidden(
+                "as of now, only username=self is permitted by the server."
             )
-        )
-    copies = BookCopiesController.get(body["book-id"])
-    if len(copies) == 0:
-        return HttpResponseNotFound("Book Copies not found")
-    cart = Cart(book_copy=copies[0])
-    cart.save()
-    return redirect(to="index")
+        if not request.user.is_authenticated:
+            # TODO: handle this case in a more sophisticated way.
+            return HttpResponse('Unauthorized', status=401)
+        cart_items = CartItemsController.get_cartitems(request.user)
+        print(cart_items)
+        return render(request, template_name="cart.html", context={})
 
-
-@method_decorator(csrf_exempt, name="dispatch")
-class BookCopiesView(View):
-    def get(self, request) -> HttpResponse:
-        queries = request.GET
-        if "book_id" not in queries:
-            return HttpResponseBadRequest(
-                json.dumps(
-                    {
-                        "status": "FAILED",
-                        "error": "book_id is mandatory query parameter",
-                    }
-                ),
-                content_type="application/json",
+    def post(self, request: HttpRequest, userid: int) -> HttpResponse:
+        print(f"{userid=}, {request.user.id=}")
+        if userid != request.user.id:
+            return HttpResponseForbidden(
+                "as of now, only username=self is permitted by the server."
             )
-        book_id = queries["book_id"]
-        data = BookCopiesController.get(int(book_id))
-        return HttpResponse(
-            json.dumps(
-                [
-                    {
-                        "id": book.id,
-                        "book_id": book.get_book_id(),
-                    }
-                    for book in data
-                ]
-            )
-        )
-
-    def post(self, request) -> HttpResponse:
-        data = json.loads(request.body)
-        try:
-            BookCopiesController.create_new_copies(
-                book_id=data["book_id"], count=data["count"]
-            )
-            return HttpResponse(
-                json.dumps({"status": "OK"}), content_type="application/json"
-            )
-        except Exception as exc:
-            return HttpResponseServerError(
-                json.dumps(
-                    {
-                        "status": "FAILED",
-                        "error": str(exc),
-                    }
-                ),
-                content_type="application/json",
-            )
-
-    def patch(self, request) -> HttpResponse:
-        data = json.loads(request.body)
-        BookCopiesController.add_copies(book_id=data["book_id"], count=data["count"])
-        return HttpResponse(
-            json.dumps({"status": "OK"}), content_type="application/json"
-        )
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class BookCopyView(View):
-    def delete(self, request, bookcopy_id: int) -> HttpResponse:
-        try:
-            BookCopiesController.delete_bookcopy(bookcopy_id)
-        except Exception as exc:
-            return HttpResponseNotFound(
-                json.dumps(
-                    {
-                        "status": "FAILED",
-                        "error": str(exc),
-                    }
-                ),
-                content_type="application/json",
-            )
-        return HttpResponse(
-            json.dumps({"status": "OK"}),
-            content_type="application/json",
-        )
+        body = json.loads(request.body.decode("utf-8"))
+        if "bookid" not in body:
+            return HttpResponseBadRequest("bookid not provided in the request")
+        bookid = body["bookid"]
+        book_copies = BookCopiesController.get(book_id=bookid)
+        if len(book_copies) == 0:
+            return HttpResponse("Book copies not available", status=409)
+        CartItemsController.add_cartitem(request.user, book_copies[0].id)
+        return HttpResponse("Successful")

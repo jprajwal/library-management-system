@@ -1,5 +1,6 @@
 :root {
     --header-height: 65px;
+    --background-color: lightgray;
 }
 
 #logo {
@@ -37,66 +38,55 @@ header>* {
     margin: 5px;
 }
 
-nav {
+header > nav {
     position: absolute;
     right: 10px;
     list-style-type: none;
 }
 
-nav li {
+header > nav li {
     display: inline-block;
     margin: 5px;
 }
 
-.flex-container {
-    display: flex;
-    flex-direction: column;
-    height: calc(100% - var(--header-height));
+#lms-body {
     padding-left: 10px;
     padding-right: 10px;
+    height: calc(100% - var(--header-height));
 }
 
-#books-view {
-    flex: 5 0 auto;
-    /*background-color: pink;*/
+.flxc {
+    display: flex;
+    flex-direction: column;
 }
 
-#books-list {
+.flxr {
+    display: flex;
+    flex-direction: row;
+}
+
+.books-list {
     padding: 0px;
 }
 
-#books-list li {
+.books-list li {
     list-style-type: none;
     display: flex;
     border-radius: 5px;
     flex-direction: row;
+    margin: 5px 0px;
 }
 
-#books-list li:hover {
-    background-color: lightgray;
+.books-list li:hover {
+    background-color: var(--background-color);
 }
 
-#book-info-container {
-    display: flex;
-    flex-direction: row;
-    flex: 5 5 95%;
-}
-
-#book-actions-container {
-    margin: 5px;
-    display: flex;
+.centered {
     align-items: center;
     justify-content: center;
-    flex: 1 1 5%;
 }
 
-#book-form {
-    display: flex;
-    flex-direction: row;
-    flex: 1 0 100%;
-}
-
-#book-image {
+.book-list-image {
     width:48px;
     height: 48px;
     border-radius: 5px;
@@ -104,12 +94,15 @@ nav li {
     margin-right: 2px;
 }
 
-#book-info {
-    margin-left: 2px;
-    flex-direction: column;
+.book-info {
+    margin-left: 5px;
 }
 
-#book-description {
+.book-title {
+    margin: 0px;
+}
+
+.book-description {
     color: gray;
     font-size: 13px;
 }

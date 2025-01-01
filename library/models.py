@@ -1,5 +1,5 @@
 from django.db import models
-import json
+from django.contrib.auth.models import User
 
 
 # Create your models here.
@@ -42,5 +42,7 @@ class BookRent(models.Model):
     due_date = models.DateField()
 
 
-class Cart(models.Model):
+class CartItem(models.Model):
+    userid = models.ForeignKey(User, on_delete=models.CASCADE)
     book_copy = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
+    added_on = models.DateTimeField(auto_now_add=True)

@@ -1,6 +1,7 @@
-from .models import Book, Author, BookCopy
+from .models import Book, Author, BookCopy, CartItem
 from enum import Enum
 from datetime import timedelta
+from django.contrib.auth.models import User
 
 
 class BooksSearchCriteria(Enum):
@@ -41,6 +42,11 @@ class BookCopiesController:
         return list(copies)
 
     @staticmethod
+    def get_copy(bookcopy_id: int) -> BookCopy:
+        copy = BookCopy.objects.get(id=bookcopy_id)
+        return copy
+
+    @staticmethod
     def create_new_copies(book_id: int, count: int) -> None:
         copies = BookCopiesController.get(book_id=book_id)
         if copies:
@@ -60,3 +66,23 @@ class BookCopiesController:
     def delete_bookcopy(bookcopy_id: int) -> None:
         copy = BookCopy.objects.get(pk=bookcopy_id)
         copy.delete()
+
+
+class CartItemsController:
+    @staticmethod
+    def get_cartitems(user: User) -> list[CartItem]:
+        return list(CartItem.objects.filter(userid=user.id))
+
+    @staticmethod
+    def add_cartitem(user: User, bookcopy_id: int) -> None:
+        # TODO: check if bookcopy_id is available in library
+        copy = BookCopiesController.get_copy(bookcopy_id)
+        # TODO: check if bookcopy_id is already added in user's cart.
+        cart_item = CartItem(userid=user, book_copy=copy)
+        cart_item.save()
+
+    @staticmethod
+    def delete_cartitem(user: User, bookcopy_id: int) -> None:
+        copy = BookCopiesController.get_copy(bookcopy_id)
+        cart_item = CartItem.objects.get(book_copy=copy, userid=user)
+        cart_item.delete()
