@@ -59,7 +59,19 @@ class CartItemsView(View):
             return HttpResponse('Unauthorized', status=401)
         cart_items = CartItemsController.get_cartitems(request.user)
         print(cart_items)
-        return render(request, template_name="cart.html", context={})
+        context = {"cart_items": []}
+        for i, item in enumerate(cart_items, 1):
+            book = item.book_copy.book_id
+            authors = ", ".join(book.author.values_list("name", flat=True))
+            context["cart_items"].append({
+                "id": book.id,
+                "slno": i,
+                "title": book.title,
+                "authors": authors,
+                "added_on": item.added_on,
+            })
+
+        return render(request, template_name="cart.html", context=context)
 
     def post(self, request: HttpRequest, userid: int) -> HttpResponse:
         print(f"{userid=}, {request.user.id=}")
