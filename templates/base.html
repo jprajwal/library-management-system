@@ -13,8 +13,20 @@
 <title>LMS</title>
 
 <body>
+        <div id="menu-parent">
+        </div>
+        <div id="menu">
+                <img id="menu-closer" src="{%static 'icons/x.png' %}">
+                <ul style="padding: 0px;">
+                        <li class="cli">Catalog</li>
+                        <li class="cli">Rent</li>
+                        <li class="cli">Cart</li>
+                        <li class="cli">Profile</li>
+                </ul>
+        </div>
         <div id="header">
         <header>
+                <img id="menu-button" src="{%static 'icons/hamburger-menu.png' %}">
                 <img id="logo-image" src="{%static 'images/heading-image.jpg'%}" alt="LogoImage">
                 <h2 id="logo">LMS</h2>
                 {%block navigation%}
@@ -37,6 +49,23 @@
         {% block body %}
         {% endblock %}
 </body>
+<script>
+window.addEventListener("load", () => {
+        const menu = document.getElementById("menu");
+        const menuButton = document.getElementById("menu-button");
+        const menuParent = document.getElementById("menu-parent");
+        const menuCloser = document.getElementById("menu-closer");
+        const toggleMenu = (ev) => {
+                menuParent.classList.toggle("hidden");
+                menu.classList.toggle("hidden");
+        };
+        menu.classList.add("hidden");
+        menuParent.classList.add("hidden");
+        menuParent.addEventListener("click", toggleMenu)
+        menuButton.addEventListener("click", toggleMenu);
+        menuCloser.addEventListener("click", toggleMenu);
+});
+</script>
 {% block scripts %}
 {% endblock %}
 </html>

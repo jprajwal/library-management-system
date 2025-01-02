@@ -64,7 +64,8 @@ class CartItemsView(View):
             book = item.book_copy.book_id
             authors = ", ".join(book.author.values_list("name", flat=True))
             context["cart_items"].append({
-                "id": book.id,
+                "cartitem_id": item.id,
+                "book_id": book.id,
                 "slno": i,
                 "title": book.title,
                 "authors": authors,
@@ -77,7 +78,7 @@ class CartItemsView(View):
         print(f"{userid=}, {request.user.id=}")
         if userid != request.user.id:
             return HttpResponseForbidden(
-                "as of now, only username=self is permitted by the server."
+                "as of now, only self userid is permitted by the server."
             )
         body = json.loads(request.body.decode("utf-8"))
         if "bookid" not in body:
@@ -87,4 +88,14 @@ class CartItemsView(View):
         if len(book_copies) == 0:
             return HttpResponse("Book copies not available", status=409)
         CartItemsController.add_cartitem(request.user, book_copies[0].id)
+        return HttpResponse("Successful")
+
+
+class CartItemView(View):
+    def delete(self, request: HttpRequest, userid: int, itemid: int) -> HttpResponse:
+        if userid != request.user.id:
+            return HttpResponseForbidden(
+                "as of now, only self userid is permitted by the server."
+            )
+        CartItemsController.delete_cartitem(request.user, itemid)
         return HttpResponse("Successful")

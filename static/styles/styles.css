@@ -1,6 +1,9 @@
 :root {
     --header-height: 65px;
-    --background-color: lightgray;
+    --foreground-color: black;
+    --midground-color: lightgray;
+    --background-color: white;
+    font-family: Arial, sans-serif;
 }
 
 #logo {
@@ -16,6 +19,73 @@ html, body {
     padding: 0;
     height: 100%;
     width: 100%;
+}
+
+#menu-button {
+    scale: 80%;
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+
+#menu-button:hover {
+    background-color: var(--midground-color);
+}
+
+#menu-parent {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    opacity: 0%;
+    opacity: 75%;
+    background-color: var(--midground-color);
+}
+
+#menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 25%;
+    height: 100%;
+    min-width: 200px;
+    z-index: 1;
+    opacity: 100%;
+    background-color: var(--background-color);
+    box-shadow: 10px 0px 20px gray;
+}
+
+#menu-closer {
+    scale: 70%;
+    border: 1px solid var(--midground-color);
+    border-radius: 5px;
+}
+
+#menu-closer:hover {
+    background-color: var(--midground-color);
+}
+
+.cli {
+    list-style-type: none;
+    margin: 0px 10px;
+    padding: 20px;
+    border-bottom: 1px dashed var(--midground-color);
+    border-top: 1px dashed var(--midground-color);
+    text-align: center;
+}
+
+.cli:hover {
+    background-color: var(--midground-color);
+}
+
+.cli:active {
+    background-color: gray;
+    /* transition: background-color 0.3s ease 0s; */
+}
+
+.hidden {
+    display: none;
 }
 
 #logo-image {
@@ -44,7 +114,7 @@ header > nav {
     list-style-type: none;
 }
 
-header > nav li {
+header > nav > li {
     display: inline-block;
     margin: 5px;
 }
@@ -69,16 +139,20 @@ header > nav li {
     padding: 0px;
 }
 
-.books-list li {
-    list-style-type: none;
-    display: flex;
+.book-list-item {
+    border-top: 1px solid var(--midground-color);
+    border-bottom: 1px solid var(--midground-color);
     border-radius: 5px;
-    flex-direction: row;
-    margin: 5px 0px;
+    margin: 10px 0px;
+    padding: 10px 00px;
 }
 
-.books-list li:hover {
-    background-color: var(--background-color);
+.books-list > li {
+    list-style-type : none;
+}
+
+.books-list > li:hover {
+    background-color: var(--midground-color);
 }
 
 .centered {
@@ -109,17 +183,4 @@ header > nav li {
 
 #book-info h2, p {
     margin: 4px;
-}
-
-#actions-view {
-    /*background-color: lightblue;*/
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1 0 0px;
-}
-
-#actions {
-    display: inline-flex;
-    width: 100%;
 }

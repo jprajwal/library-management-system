@@ -40,5 +40,9 @@ urlpatterns = [
     path(
         "library/members/<int:userid>/cartitems",
         view=views.CartItemsView.as_view(), name="cart-items",
-    )
+    ),
+    path(
+        "library/members/<int:userid>/cartitems/<int:itemid>",
+        view=views.CartItemView.as_view(), name="cart-items",
+    ),
 ]

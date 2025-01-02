@@ -6,17 +6,49 @@
         <div style="flex: 5 0 auto;">
                 <ul class="books-list">
                 {% for book in cart_items %}
-                        <li>
-                                <div class="flxr" style="flex: 5 5 95%;">
+                        <li class="book-list-item flxr">
+                                <div class="flxr" style="flex: 5 5 90%;">
                                         <img class="book-list-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
                                         <div class="book-info flxc">
                                                 <h2 class="book-title">{{book.title}}</h2>
                                                 <p class="book-description">{{book.authors}}</p>
                                         </div>
                                 </div>
+                                <div class="flxr centered" style="flex: 1 1 10%">
+                                        <input type="button" value="delete" onclick="deleteCartItem(this, {{book.cartitem_id}})"
+                                </div>
                         </li>
                 {% endfor %}
                 </ul>
         </div>
+        <div id="message-console" style="flex: 2 0 auto;">
+        </div>
 </div>
+<script src="{% static '/js/utils.js' %}"></script>
+<script>
+        function deleteCartItem(element, cartitemId) {
+                const csrftoken = getCookie("csrftoken");
+                fetch(
+                        `/library/members/{{user.id}}/cartitems/${cartitemId}`,
+                        {
+                                "method": "DELETE",
+                                "headers": {
+                                        "X-CSRFToken": csrftoken,
+                                        "Content-Type": "application/json",
+                                },
+                        }
+                ).then((resp) => {
+                        console.log(resp.ok);
+                        if (!resp.ok) {
+                                resp.text()
+                                .then((body) => console.error("deleting cartitem failed" + body));
+                                document.getElementById("message-console").innerHTML = body;
+                                return;
+                        }
+                        window.location.reload(true);
+                }).catch((err) => {
+                        console.error(err);
+                });
+        }
+</script>
 {%endblock%}

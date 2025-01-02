@@ -82,7 +82,6 @@ class CartItemsController:
         cart_item.save()
 
     @staticmethod
-    def delete_cartitem(user: User, bookcopy_id: int) -> None:
-        copy = BookCopiesController.get_copy(bookcopy_id)
-        cart_item = CartItem.objects.get(book_copy=copy, userid=user)
+    def delete_cartitem(user: User, cartitem_id: int) -> None:
+        cart_item = CartItem.objects.get(id=cartitem_id)
         cart_item.delete()
