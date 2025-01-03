@@ -2,6 +2,7 @@ from .models import Book, Author, BookCopy, CartItem
 from enum import Enum
 from datetime import timedelta
 from django.contrib.auth.models import User
+from .queriable import DefaultPaginationQueriableImplForDjango
 
 
 class BooksSearchCriteria(Enum):
@@ -9,7 +10,11 @@ class BooksSearchCriteria(Enum):
     TITLE = "TITLE"
 
 
-class BooksController:
+class BooksController(DefaultPaginationQueriableImplForDjango):
+    def __init__(self):
+        super().__init__()
+        self._model = Book
+
     @staticmethod
     def browse() -> list[Book]:
         return list(Book.objects.all())
@@ -35,7 +40,11 @@ class BooksController:
         book.author.set([author])
 
 
-class BookCopiesController:
+class BookCopiesController(DefaultPaginationQueriableImplForDjango):
+    def __init__(self):
+        super().__init__()
+        self._model = BookCopy
+
     @staticmethod
     def get(book_id: int) -> list[BookCopy]:
         copies = BookCopy.objects.filter(book_id=book_id)
@@ -68,7 +77,11 @@ class BookCopiesController:
         copy.delete()
 
 
-class CartItemsController:
+class CartItemsController(DefaultPaginationQueriableImplForDjango):
+    def __init__(self):
+        super().__init__()
+        self._model = CartItem
+
     @staticmethod
     def get_cartitems(user: User) -> list[CartItem]:
         return list(CartItem.objects.filter(userid=user.id))

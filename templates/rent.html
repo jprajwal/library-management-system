@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{%load static%}
+{% block styles %}
+<!-- <link rel="stylesheet" href="{%static 'styles/styles.css'%}"> -->
+{% endblock %}
+{% block body %}
+{% block scripts %}
+{% endblock %}
+<div id="lms-body" class="flxc">
+    <!-- actions view -->
+    <div class="flxc centered" style="flex: 1 0 0px;padding: 10px;">
+            <!-- <div class="flxr" style="flex: 1 0 0px;"> -->
+                    <form method="POST" action="/library/books/search">
+                            {% csrf_token %}
+                            <label for="searchby">Search by:</label>
+                            <select id="searchby" name="searchby">
+                                    <option value="author">Book author</option>
+                                    <option value="title">Book title</option>
+                            </select>
+                            <input type="text" placeholder="search" name="search-text" style="flex: 5 0 0px;">
+                            <input type="submit" value="search">
+                    </form>
+                    <!-- <form method="GET" action="/library/members/{{user.id}}/cartitems">
+                            <input id="checkout-button" type="submit" value="checkout">
+                    </form> -->
+            <!-- </div> -->
+    </div>
+    <!-- books list view -->
+    <div style="flex: 5 0 auto;">
+            <ul class="books-list">
+            {% for book in books %}
+                    <li class="book-list-item flxr">
+                            <div class="flxr" style="flex: 5 5 95%;">
+                                    <img class="book-list-image" src="{%static 'images/heading-image.jpg'%}", alt="book-image">
+                                    <div class="book-info flxc">
+                                            <h3 class="book-title">{{book.title}}</h3>
+                                            <p class="book-description">{{book.authors}}</p>
+                                    </div>
+                            </div>
+                            {% if user.is_authenticated %}
+                            <div class="flxc centered" style="flex: 1 1 5%; margin: 5px;">
+                                    <input type="button" value="add to cart" onClick="addToCart(this, {{book.id}})">
+                            </div>
+                            {% endif %}
+                    </li>
+            {% endfor %}
+            </ul>
+    </div>
+    <!-- error message view -->
+    <div id="message-console" style="flex: 1 0 50px;"></div>
+</div>
+<script src="{% static '/js/utils.js' %}"></script>
+{% endblock %}

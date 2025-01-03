@@ -43,6 +43,7 @@ urlpatterns = [
     ),
     path(
         "library/members/<int:userid>/cartitems/<int:itemid>",
-        view=views.CartItemView.as_view(), name="cart-items",
+        view=views.CartItemView.as_view(), name="cart-item",
     ),
+    path("library/books", views.BooksView.as_view(), name="books-view"),
 ]

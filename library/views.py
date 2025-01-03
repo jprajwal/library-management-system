@@ -3,15 +3,20 @@ import json
 from django.contrib.auth.models import User
 from django.http import (
     HttpRequest,
-    HttpResponseServerError,
     HttpResponse,
-    HttpResponseForbidden,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseServerError,
 )
 from django.shortcuts import redirect, render
 from django.views import View
+from django.utils import http as httputils
 
+from . import serde
+from .constants import GlobalConstants as GC
 from .controllers import BookCopiesController, BooksController, CartItemsController
+from .models import Book
+from .pagination import Pagination
 
 
 def index(request):
@@ -47,6 +52,40 @@ def signup(request: HttpRequest):
         )
 
 
+# /library/books?page=1&per_page=50
+class BooksView(View):
+    def get(self, request: HttpRequest) -> HttpResponse:
+        controller = BooksController()
+        page = int(request.GET.get("page") or GC.default_page)
+        perpage = int(request.GET.get("per_page") or GC.default_perpage)
+        pagination = Pagination[Book](controller)
+
+        pd = pagination.paginate(page, perpage)
+
+        prev_link = ""
+        next_link = ""
+        if pd.next:
+            q = dict(**request.GET)
+            q["page"] = page + 1
+            next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
+
+        if pd.prev:
+            q = dict(**request.GET)
+            q["page"] = page - 1
+            prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
+
+        return HttpResponse(
+            json.dumps(
+                {
+                    "books": pd.items,
+                    "next": next_link,
+                    "prev": prev_link,
+                },
+                cls=serde.BookEncoder,
+            )
+        )
+
+
 # /library/members/<str:username>/cartitems
 class CartItemsView(View):
     def get(self, request: HttpRequest, userid: int) -> HttpResponse:
@@ -56,21 +95,23 @@ class CartItemsView(View):
             )
         if not request.user.is_authenticated:
             # TODO: handle this case in a more sophisticated way.
-            return HttpResponse('Unauthorized', status=401)
+            return HttpResponse("Unauthorized", status=401)
         cart_items = CartItemsController.get_cartitems(request.user)
         print(cart_items)
         context = {"cart_items": []}
         for i, item in enumerate(cart_items, 1):
             book = item.book_copy.book_id
             authors = ", ".join(book.author.values_list("name", flat=True))
-            context["cart_items"].append({
-                "cartitem_id": item.id,
-                "book_id": book.id,
-                "slno": i,
-                "title": book.title,
-                "authors": authors,
-                "added_on": item.added_on,
-            })
+            context["cart_items"].append(
+                {
+                    "cartitem_id": item.id,
+                    "book_id": book.id,
+                    "slno": i,
+                    "title": book.title,
+                    "authors": authors,
+                    "added_on": item.added_on,
+                }
+            )
 
         return render(request, template_name="cart.html", context=context)
 
