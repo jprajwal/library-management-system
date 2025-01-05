@@ -14,13 +14,13 @@ from django.utils import http as httputils
 
 from . import serde
 from .constants import GlobalConstants as GC
-from .controllers import BookCopiesController, BooksController, CartItemsController
+from .controllers import BookCopiesController, AllBookDataGetter, CartItemsController, PaginatedBookDataGetter
 from .models import Book
-from .pagination import Pagination
+from .queriable import DataGetter
 
 
 def index(request):
-    books = BooksController.browse()
+    books = AllBookDataGetter().get_data()
     context = {"books": []}
     for i, book in enumerate(books, 1):
         book_copies_count = len(BookCopiesController.get(book_id=book.id))
@@ -52,24 +52,30 @@ def signup(request: HttpRequest):
         )
 
 
-# /library/books?page=1&per_page=50
+# /library/books?page=1&per_page=50&search_by=[author|title]&search_str=abc
 class BooksView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
-        controller = BooksController()
+        data_getter: DataGetter[Book] = AllBookDataGetter()
+
+        # handle filtering
+        
+        # handle pagination
         page = int(request.GET.get("page") or GC.default_page)
         perpage = int(request.GET.get("per_page") or GC.default_perpage)
-        pagination = Pagination[Book](controller)
-
-        pd = pagination.paginate(page, perpage)
+        data_getter = PaginatedBookDataGetter(data_getter, page, perpage)
+        items = data_getter.get_data()
+        has_next = data_getter.has_beyond()
+        has_prev = data_getter.has_before()
 
         prev_link = ""
         next_link = ""
-        if pd.next:
+        if has_next:
             q = dict(**request.GET)
             q["page"] = page + 1
             next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
 
-        if pd.prev:
+        if has_prev:
+            print(f"{has_prev=}")
             q = dict(**request.GET)
             q["page"] = page - 1
             prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
@@ -77,7 +83,7 @@ class BooksView(View):
         return HttpResponse(
             json.dumps(
                 {
-                    "books": pd.items,
+                    "books": items,
                     "next": next_link,
                     "prev": prev_link,
                 },

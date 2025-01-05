@@ -1,46 +1,69 @@
-from .models import Book, Author, BookCopy, CartItem
-from enum import Enum
-from datetime import timedelta
+from typing import Any, Iterable
+
 from django.contrib.auth.models import User
-from .queriable import DefaultPaginationQueriableImplForDjango
+from django.db.models import QuerySet
+
+from .models import Author, Book, BookCopy, CartItem
+from .queriable import DataGetter, PaginatedDjangoModelDataGetter
 
 
-class BooksSearchCriteria(Enum):
-    AUTHOR = "AUTHOR"
-    TITLE = "TITLE"
+class AllBookDataGetter(DataGetter[Book]):
+    def get_data(self) -> Iterable[Book]:
+        return Book.objects.all()
 
 
-class BooksController(DefaultPaginationQueriableImplForDjango):
-    def __init__(self):
-        super().__init__()
-        self._model = Book
+class OrderedBookDataGetter(DataGetter[Book]):
+    def __init__(self, order: str) -> None:
+        self.order = order
 
-    @staticmethod
-    def browse() -> list[Book]:
-        return list(Book.objects.all())
-
-    @staticmethod
-    def search(criteria: BooksSearchCriteria, query_str: str) -> list[Book]:
-        if criteria == BooksSearchCriteria.AUTHOR:
-            return list(Book.objects.filter(author__name__contains=query_str))
-        elif criteria == BooksSearchCriteria.TITLE:
-            return list(Book.objects.filter(title__contains=query_str))
-        else:
-            raise Exception("invalid search criteria")
-
-    @staticmethod
-    def add_book(**kwargs) -> None:
-        author = Author.objects.get(pk=kwargs["author"])
-        book = Book(
-            title=kwargs["title"],
-            rent_cost=int(kwargs["rent_cost"]),
-            max_rent_period=timedelta(days=int(kwargs["max_rent_period"]))
-        )
-        book.save()
-        book.author.set([author])
+    def get_data(self) -> Iterable[Book]:
+        match self.order:
+            case "ascending":
+                return Book.objects.all()
+            case "desending":
+                return Book.objects.all().reverse()
+            case _:
+                raise Exception("Unsupported order criteria provided")
 
 
-class BookCopiesController(DefaultPaginationQueriableImplForDjango):
+class FilteredBookDataGetter(DataGetter[Book]):
+    def __init__(self, filter_info: dict[str, Any] = None) -> None:
+        self.data = Book.objects.all()
+        # protocol for defining filter data:
+        # filter data must be defined as a dictionary called filter-dict.
+        # The filter-dict's keys are the db fields by which the data must
+        # filtered.
+        # The filter-dict's values are also a dictionary called filter-value.
+        # The filter-value dict is must comprise of 2 mandatory keys.
+        # The first key is: "value" and the associated value is the the filter
+        # which is the data by which the db data must be filtered.
+        # The second key is: "matchby" and the associated value is a string
+        # specifies how the "value" must be matched against the db data.
+        # For example, {"name": {"matchby": "contains", "value": "johndoe"}}
+        # filters the db data if the name field of the records contains "johndoe"
+        # in them.
+        self.filter_info: dict[str, Any] = filter_info or {}
+
+    def get_data(self) -> Iterable[Book]:
+        filters = {}
+        for key, value in self.filter_info.items():
+            filter_ = key
+            match value["matchby"]:
+                case "contains":
+                    filter_ += "__contains"
+                case _:
+                    raise Exception("Unknown matchby criteria provided")
+            filters[key] = filter_
+        data = self.data.filter(**filters)
+        return data
+
+
+class PaginatedBookDataGetter(PaginatedDjangoModelDataGetter):
+    def __init__(self, data: DataGetter[Book], page: int, perpage: int) -> None:
+        super().__init__(data, page, perpage)
+
+
+class BookCopiesController(PaginatedDjangoModelDataGetter):
     def __init__(self):
         super().__init__()
         self._model = BookCopy
@@ -77,7 +100,7 @@ class BookCopiesController(DefaultPaginationQueriableImplForDjango):
         copy.delete()
 
 
-class CartItemsController(DefaultPaginationQueriableImplForDjango):
+class CartItemsController(PaginatedDjangoModelDataGetter):
     def __init__(self):
         super().__init__()
         self._model = CartItem
