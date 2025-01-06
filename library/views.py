@@ -9,12 +9,18 @@ from django.http import (
     HttpResponseServerError,
 )
 from django.shortcuts import redirect, render
-from django.views import View
 from django.utils import http as httputils
+from django.views import View
 
 from . import serde
 from .constants import GlobalConstants as GC
-from .controllers import BookCopiesController, BooksController, CartItemsController
+from .controllers import (
+    BookCopiesController,
+    BooksController,
+    CartItemsController,
+    FilteredBookDataGetter,
+    OrderedBookDataGetter,
+)
 from .models import Book
 from .pagination import Pagination
 
@@ -55,21 +61,46 @@ def signup(request: HttpRequest):
 # /library/books?page=1&per_page=50
 class BooksView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
-        controller = BooksController()
+        data = BooksController.get_all()
         page = int(request.GET.get("page") or GC.default_page)
         perpage = int(request.GET.get("per_page") or GC.default_perpage)
-        pagination = Pagination[Book](controller)
+
+        # order
+        if "order" in request.GET:
+            data = data.apply(OrderedBookDataGetter(request.GET["order"]).get_data)
+
+        # filter
+        if any(map(lambda x: x in ["author", "title"], request.GET.keys())):
+            filters = {}
+            matchby = request.GET.get("matchby", "contains")
+            if "author" in request.GET:
+                filters.update(
+                    {
+                        "author__name": {
+                            "matchby": matchby,
+                            "value": request.GET["author"],
+                        }
+                    }
+                )
+            if "title" in request.GET:
+                filters.update(
+                    {"title": {"matchby": matchby, "value": request.GET["title"]}}
+                )
+            print(f"{filters=}")
+            data = data.apply(FilteredBookDataGetter(filters).get_data)
+
+        pagination = Pagination[Book](data)
 
         pd = pagination.paginate(page, perpage)
 
         prev_link = ""
         next_link = ""
-        if pd.next:
+        if pd.has_next:
             q = dict(**request.GET)
             q["page"] = page + 1
             next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
 
-        if pd.prev:
+        if pd.has_prev:
             q = dict(**request.GET)
             q["page"] = page - 1
             prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
@@ -77,7 +108,7 @@ class BooksView(View):
         return HttpResponse(
             json.dumps(
                 {
-                    "books": pd.items,
+                    "books": list(pd.items),
                     "next": next_link,
                     "prev": prev_link,
                 },

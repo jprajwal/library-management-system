@@ -15,7 +15,7 @@
                                 <option value="author">Book author</option>
                                 <option value="title">Book title</option>
                         </select>
-                        <input type="text" placeholder="search" name="search-text" style="flex: 5 0 0px;">
+                        <input id="search-text" type="text" placeholder="search" name="search-text" style="flex: 5 0 0px;">
                         <input type="button" value="search" onclick="searchBooks(updateBooksList)">
                 </div>
         </div>
@@ -38,13 +38,21 @@
         window.addEventListener("load", () => {
                 fetchBooks(
                         updateBooksList,
-                        `/library/books?page=${DEFAULT_PAGE}&per_page=${DEFAULT_PERPAGE}`
+                        `/library/books?page=${DEFAULT_PAGE}&per_page=${DEFAULT_PERPAGE}&order=descend`
                 );
 
         });
 
         function searchBooks(callback) {
-                const url = `/library/books?page=${DEFAULT_PAGE}&per_page=${DEFAULT_PERPAGE}`;
+                let url = `/library/books?page=${DEFAULT_PAGE}&per_page=${DEFAULT_PERPAGE}`;
+                const searchText = document.getElementById("search-text").value;
+                const searchby = document.getElementById("searchby").value;
+                console.log(`searchText=${searchText}, searchby=${searchby}`);
+                if (searchText !== "") {
+                        url += `&${searchby}=${searchText}&matchby=contains`;
+                }
+                const order = "descend";
+                url += `&order=${order}`;
                 fetchBooks(callback, url);
         }
 

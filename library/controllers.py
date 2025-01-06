@@ -1,8 +1,43 @@
-from .models import Book, Author, BookCopy, CartItem
-from enum import Enum
 from datetime import timedelta
+from enum import Enum
+from typing import Any
+
 from django.contrib.auth.models import User
-from .queriable import DefaultPaginationQueriableImplForDjango
+
+from .models import Author, Book, BookCopy, CartItem
+from .queriable import Data, DataGetter
+
+
+class OrderedBookDataGetter(DataGetter[Book]):
+    def __init__(self, order: str = "ascend") -> None:
+        self.order = order
+
+    def get_data(self, qs) -> Data[Book]:
+        match self.order:
+            case "ascend":
+                return Data[Book](qs)
+            case "descend":
+                return Data[Book](qs.reverse())
+            case _:
+                raise Exception("Invalid order criteria provided.")
+
+
+class FilteredBookDataGetter(DataGetter[Book]):
+    def __init__(self, filter_info: dict[str, Any]):
+        self.filter_info = filter_info
+
+    def get_data(self, qs) -> Data[Book]:
+        filters = {}
+        for key, value in self.filter_info.items():
+            filter_ = key
+            match value["matchby"]:
+                case "contains":
+                    filter_ += "__contains"
+                case _:
+                    raise Exception("Unknown matchby criteria provided")
+            filters[filter_] = value["value"]
+        print(f"{filters=}")
+        return Data[Book](qs.filter(**filters))
 
 
 class BooksSearchCriteria(Enum):
@@ -10,7 +45,7 @@ class BooksSearchCriteria(Enum):
     TITLE = "TITLE"
 
 
-class BooksController(DefaultPaginationQueriableImplForDjango):
+class BooksController:
     def __init__(self):
         super().__init__()
         self._model = Book
@@ -34,13 +69,17 @@ class BooksController(DefaultPaginationQueriableImplForDjango):
         book = Book(
             title=kwargs["title"],
             rent_cost=int(kwargs["rent_cost"]),
-            max_rent_period=timedelta(days=int(kwargs["max_rent_period"]))
+            max_rent_period=timedelta(days=int(kwargs["max_rent_period"])),
         )
         book.save()
         book.author.set([author])
 
+    @staticmethod
+    def get_all() -> Data[Book]:
+        return Data[Book](Book.objects.all())
 
-class BookCopiesController(DefaultPaginationQueriableImplForDjango):
+
+class BookCopiesController:
     def __init__(self):
         super().__init__()
         self._model = BookCopy
@@ -77,7 +116,7 @@ class BookCopiesController(DefaultPaginationQueriableImplForDjango):
         copy.delete()
 
 
-class CartItemsController(DefaultPaginationQueriableImplForDjango):
+class CartItemsController:
     def __init__(self):
         super().__init__()
         self._model = CartItem
