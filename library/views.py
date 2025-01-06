@@ -26,21 +26,7 @@ from .pagination import Pagination
 
 
 def index(request):
-    books = BooksController.browse()
-    context = {"books": []}
-    for i, book in enumerate(books, 1):
-        book_copies_count = len(BookCopiesController.get(book_id=book.id))
-        authors = ", ".join(book.author.values_list("name", flat=True))
-        context["books"].append(
-            {
-                "id": book.id,
-                "slno": i,
-                "title": book.title,
-                "authors": authors,
-                "count": book_copies_count,
-            }
-        )
-    return render(request, template_name="index.html", context=context)
+    return render(request, template_name="index.html")
 
 
 def signup(request: HttpRequest):

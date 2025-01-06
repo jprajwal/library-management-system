@@ -21,3 +21,7 @@ dev = [
     "flake8",
     "pylint",
 ]
+upload = [
+    "pandas",
+    "django-extensions",
+]
