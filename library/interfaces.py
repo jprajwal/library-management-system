@@ -10,8 +10,16 @@ class Data(Generic[T]):
     def __init__(self, qs: QuerySet) -> None:
         self.qs = qs
 
-    def apply(self, f: Callable[[QuerySet], "Data[T]"]) -> "Data[T]":
-        return f(self.qs)
+    # def apply(self, f: Callable[[QuerySet], "Data[T]"]) -> "Data[T]":
+    def transform(self, dg: "DataGetter[T]") -> "Data[T]":
+        return dg.get_data(self.qs)
+
+    def transform_if(
+        self, predicate: Callable[[], bool], dg: "DataGetter[T]"
+    ) -> "Data[T]":
+        if predicate():
+            return dg.get_data(self.qs)
+        return self
 
     def iterator(self) -> Iterator[T]:
         return self.qs.iterator()

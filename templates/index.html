@@ -17,6 +17,11 @@
                         </select>
                         <input id="search-text" type="text" placeholder="search" name="search-text" style="flex: 5 0 0px;">
                         <input type="button" value="search" onclick="searchBooks(updateBooksList)">
+                        <label for="order">Order:</label>
+                        <select id="order" name="searchby">
+                                <option value="ascend">Ascending</option>
+                                <option value="descend">Descending</option>
+                        </select>
                 </div>
         </div>
         <!-- books list view -->
@@ -51,7 +56,7 @@
                 if (searchText !== "") {
                         url += `&${searchby}=${searchText}&matchby=contains`;
                 }
-                const order = "descend";
+                const order = document.getElementById("order").value;
                 url += `&order=${order}`;
                 fetchBooks(callback, url);
         }

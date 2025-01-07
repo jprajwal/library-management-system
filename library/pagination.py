@@ -1,6 +1,6 @@
 from typing import Generic, Iterator, TypeVar
 
-from .queriable import Data
+from .interfaces import Data
 
 T = TypeVar("T", covariant=True)
 

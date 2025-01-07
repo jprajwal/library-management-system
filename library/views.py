@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.http import (
@@ -15,14 +16,52 @@ from django.views import View
 from . import serde
 from .constants import GlobalConstants as GC
 from .controllers import (
+    AllBookDataGetter,
     BookCopiesController,
-    BooksController,
     CartItemsController,
     FilteredBookDataGetter,
     OrderedBookDataGetter,
 )
 from .models import Book
-from .pagination import Pagination
+from .pagination import PaginatedData, Pagination
+
+
+class Utils:
+    @staticmethod
+    def get_pagination_view(request: HttpRequest, pd: PaginatedData) -> tuple[str, str]:
+        page = int(request.GET.get("page", GC.default_page))
+        prev_link = ""
+        next_link = ""
+        if pd.has_next:
+            q = dict(**request.GET)
+            q["page"] = page + 1
+            next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
+
+        if pd.has_prev:
+            q = dict(**request.GET)
+            q["page"] = page - 1
+            prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
+        return (prev_link, next_link)
+
+    @staticmethod
+    def get_filter_protocol_info(
+        request, filter_keys: list[str]
+    ) -> dict[str, Any] | None:
+        if any(map(lambda x: x in filter_keys, request.GET.keys())):
+            filters = {}
+            matchby = request.GET.get("matchby", "contains")
+            for key in filter_keys:
+                if key in request.GET:
+                    filters.update(
+                        {
+                            key: {
+                                "matchby": matchby,
+                                "value": request.GET[key],
+                            }
+                        }
+                    )
+            return filters
+        return None
 
 
 def index(request):
@@ -47,49 +86,25 @@ def signup(request: HttpRequest):
 # /library/books?page=1&per_page=50
 class BooksView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
-        data = BooksController.get_all()
+        data = AllBookDataGetter().get_data(None)
         page = int(request.GET.get("page") or GC.default_page)
         perpage = int(request.GET.get("per_page") or GC.default_perpage)
 
         # order
-        if "order" in request.GET:
-            data = data.apply(OrderedBookDataGetter(request.GET["order"]).get_data)
+        data = data.transform_if(
+            lambda: "order" in request.GET, OrderedBookDataGetter(request.GET["order"])
+        )
 
         # filter
-        if any(map(lambda x: x in ["author", "title"], request.GET.keys())):
-            filters = {}
-            matchby = request.GET.get("matchby", "contains")
-            if "author" in request.GET:
-                filters.update(
-                    {
-                        "author__name": {
-                            "matchby": matchby,
-                            "value": request.GET["author"],
-                        }
-                    }
-                )
-            if "title" in request.GET:
-                filters.update(
-                    {"title": {"matchby": matchby, "value": request.GET["title"]}}
-                )
-            print(f"{filters=}")
-            data = data.apply(FilteredBookDataGetter(filters).get_data)
+        filters = Utils.get_filter_protocol_info(request, ["author", "title"])
+        print(f"{filters=}")
+        data = data.transform_if(
+            lambda: filters is not None, FilteredBookDataGetter(filters or {})
+        )
 
         pagination = Pagination[Book](data)
-
         pd = pagination.paginate(page, perpage)
-
-        prev_link = ""
-        next_link = ""
-        if pd.has_next:
-            q = dict(**request.GET)
-            q["page"] = page + 1
-            next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
-
-        if pd.has_prev:
-            q = dict(**request.GET)
-            q["page"] = page - 1
-            prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
+        prev_link, next_link = Utils.get_pagination_view(request, pd)
 
         return HttpResponse(
             json.dumps(

@@ -1,32 +1,33 @@
-from datetime import timedelta
-from enum import Enum
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from django.contrib.auth.models import User
+from django.db.models import Model
 
-from .models import Author, Book, BookCopy, CartItem
-from .queriable import Data, DataGetter
+from .interfaces import Data, DataGetter
+from .models import Book, BookCopy, CartItem
+
+DjangoModel = TypeVar("DjangoModel", bound=Model, covariant=True)
 
 
-class OrderedBookDataGetter(DataGetter[Book]):
+class OrderedDataGetter(Generic[DjangoModel], DataGetter[DjangoModel]):
     def __init__(self, order: str = "ascend") -> None:
         self.order = order
 
-    def get_data(self, qs) -> Data[Book]:
+    def get_data(self, qs) -> Data[DjangoModel]:
         match self.order:
             case "ascend":
-                return Data[Book](qs)
+                return Data[DjangoModel](qs)
             case "descend":
-                return Data[Book](qs.reverse())
+                return Data[DjangoModel](qs.reverse())
             case _:
                 raise Exception("Invalid order criteria provided.")
 
 
-class FilteredBookDataGetter(DataGetter[Book]):
+class FilteredDataGetter(Generic[DjangoModel], DataGetter[DjangoModel]):
     def __init__(self, filter_info: dict[str, Any]):
         self.filter_info = filter_info
 
-    def get_data(self, qs) -> Data[Book]:
+    def get_data(self, qs) -> Data[DjangoModel]:
         filters = {}
         for key, value in self.filter_info.items():
             filter_ = key
@@ -37,46 +38,39 @@ class FilteredBookDataGetter(DataGetter[Book]):
                     raise Exception("Unknown matchby criteria provided")
             filters[filter_] = value["value"]
         print(f"{filters=}")
-        return Data[Book](qs.filter(**filters))
+        return Data[DjangoModel](qs.filter(**filters))
 
 
-class BooksSearchCriteria(Enum):
-    AUTHOR = "AUTHOR"
-    TITLE = "TITLE"
-
-
-class BooksController:
-    def __init__(self):
-        super().__init__()
-        self._model = Book
-
-    @staticmethod
-    def browse() -> list[Book]:
-        return list(Book.objects.all())
-
-    @staticmethod
-    def search(criteria: BooksSearchCriteria, query_str: str) -> list[Book]:
-        if criteria == BooksSearchCriteria.AUTHOR:
-            return list(Book.objects.filter(author__name__contains=query_str))
-        elif criteria == BooksSearchCriteria.TITLE:
-            return list(Book.objects.filter(title__contains=query_str))
-        else:
-            raise Exception("invalid search criteria")
-
-    @staticmethod
-    def add_book(**kwargs) -> None:
-        author = Author.objects.get(pk=kwargs["author"])
-        book = Book(
-            title=kwargs["title"],
-            rent_cost=int(kwargs["rent_cost"]),
-            max_rent_period=timedelta(days=int(kwargs["max_rent_period"])),
-        )
-        book.save()
-        book.author.set([author])
-
-    @staticmethod
-    def get_all() -> Data[Book]:
+class AllBookDataGetter(DataGetter[Book]):
+    def get_data(self, _):
         return Data[Book](Book.objects.all())
+
+
+class AllBookCopyDataGetter(DataGetter[BookCopy]):
+    def get_data(self, _):
+        return Data[BookCopy](BookCopy.objects.all())
+
+
+class AllBookCopyDataGetter(DataGetter[CartItem]):
+    def get_data(self, _):
+        return Data[CartItem](CartItem.objects.all())
+
+
+OrderedBookDataGetter = OrderedDataGetter[Book]
+OrderedBookCopyDataGetter = OrderedDataGetter[BookCopy]
+OrderedCartItemDataGetter = OrderedDataGetter[CartItem]
+
+
+class FilteredBookDataGetter(FilteredDataGetter[Book]):
+    def get_data(self, qs) -> Data[Book]:
+        if "author" in self.filter_info:
+            author_info = self.filter_info.pop("author")
+            self.filter_info["author__name"] = author_info
+        return super().get_data(qs)
+
+
+FilteredBookCopyDataGetter = FilteredDataGetter[BookCopy]
+FilteredCartItemDataGetter = FilteredDataGetter[CartItem]
 
 
 class BookCopiesController:
