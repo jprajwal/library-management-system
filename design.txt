@@ -19,6 +19,13 @@ Design
         - data
             - id
             - book_id
+            - added_on
+    - CartItem
+        - data
+            - id
+            - type
+            - product_id
+            - count
     - BookRent
         - data
             - id

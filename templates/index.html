@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {%load static%}
 {% block styles %}
-<!-- <link rel="stylesheet" href="{%static 'styles/styles.css'%}"> -->
 {% endblock %}
 {% block body %}
 {% block scripts %}
@@ -30,8 +29,6 @@
                 </ul>
         </div>
         <div id="page-control-panel" class="flxr centered">
-            <!-- <input type="button" value="prev" onclick="getPrevPage()">
-            <input type="button" value="next" onclick="getNextPage()">     -->
         </div>
         <!-- error message view -->
         <div id="message-console" style="flex: 1 0 50px;"></div>
@@ -60,21 +57,6 @@
                 url += `&order=${order}`;
                 fetchBooks(callback, url);
         }
-
-        // function getPrevPage() {
-        //         const state = document.state.paginationState;
-        //         if (page == 1) {
-        //                 return;
-        //         }
-        //         state.page -= 1;
-        //         fetchBooks(updateBooksList, state.page, state.perpage);
-        // }
-
-        // function getNextPage() {
-        //         const state = document.state.paginationState;
-        //         state.page -= 1;
-        //         fetchBooks(updateBooksList, state.page, state.perpage);
-        // }
 
         function updateBooksList(books) {
                 const booksList = document.getElementById("books-list");

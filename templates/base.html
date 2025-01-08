@@ -18,9 +18,9 @@
         <div id="menu">
                 <img id="menu-closer" src="{%static 'icons/x.png' %}">
                 <ul style="padding: 0px;">
-                        <li class="cli">Catalog</li>
-                        <li class="cli">Rent</li>
-                        <li class="cli">Cart</li>
+                        <li class="cli" onclick="loadPage('/')">Catalog</li>
+                        <li class="cli" onclick="">Rent</li>
+                        <li class="cli" onclick="loadPage('/library/members/{{user.id}}/cartitems')">Cart</li>
                         <li class="cli">Profile</li>
                 </ul>
         </div>
@@ -65,6 +65,10 @@ window.addEventListener("load", () => {
         menuButton.addEventListener("click", toggleMenu);
         menuCloser.addEventListener("click", toggleMenu);
 });
+
+function loadPage(pageUrl) {
+        window.location.href = pageUrl;
+}
 </script>
 {% block scripts %}
 {% endblock %}

@@ -42,7 +42,16 @@ class BookRent(models.Model):
     due_date = models.DateField()
 
 
+class CartItemType(models.TextChoices):
+    BOOK = "book"
+
+
 class CartItem(models.Model):
     userid = models.ForeignKey(User, on_delete=models.CASCADE)
-    book_copy = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
-    added_on = models.DateTimeField(auto_now_add=True)
+    item_type = models.CharField(
+        choices=CartItemType,
+        default=CartItemType.BOOK,
+        max_length=10,
+    )
+    product_id = models.IntegerField()
+    requested_count = models.IntegerField()

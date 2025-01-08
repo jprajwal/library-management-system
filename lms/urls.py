@@ -38,7 +38,7 @@ urlpatterns = [
 
     # library/
     path(
-        "library/members/<int:userid>/cartitems",
+        "library/members/me/cartitems",
         view=views.CartItemsView.as_view(), name="cart-items",
     ),
     path(

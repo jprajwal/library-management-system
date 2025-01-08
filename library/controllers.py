@@ -34,6 +34,8 @@ class FilteredDataGetter(Generic[DjangoModel], DataGetter[DjangoModel]):
             match value["matchby"]:
                 case "contains":
                     filter_ += "__contains"
+                case "exact":
+                    pass
                 case _:
                     raise Exception("Unknown matchby criteria provided")
             filters[filter_] = value["value"]
@@ -51,7 +53,7 @@ class AllBookCopyDataGetter(DataGetter[BookCopy]):
         return Data[BookCopy](BookCopy.objects.all())
 
 
-class AllBookCopyDataGetter(DataGetter[CartItem]):
+class AllCartItemDataGetter(DataGetter[CartItem]):
     def get_data(self, _):
         return Data[CartItem](CartItem.objects.all())
 
