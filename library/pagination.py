@@ -1,5 +1,4 @@
 from typing import Generic, TypeVar, Iterable
-from .queriable import PaginationQueriable
 
 
 T = TypeVar('T')
@@ -18,15 +17,30 @@ class PaginatedData(Generic[T]):
 
 
 class Pagination(Generic[T]):
-    def __init__(self, queriable: PaginationQueriable[T]) -> None:
-        self._queriable = queriable
+    def __init__(self, page: int = 1, perpage: int = 50) -> None:
+        self.page = page
+        self.perpage = perpage
 
-    def paginate(self, page: int, perpage: int) -> PaginatedData[T]:
+    def paginate(self, iterable: Iterable) -> PaginatedData[T]:
+        page, perpage = self.page, self.perpage
+        assert page > 0 and perpage > 0
         start = (page - 1) * perpage
         end = page * perpage
-        ls = self._queriable.get_data_by_range(start, end)
+        ls = []
+        has_beyond = False
+        has_before = False
+        for i, item in enumerate(iterable):
+            if i > 0:
+                has_before = True
+            if i < start:
+                continue
+            if i == end:
+                has_beyond = True
+                break
+            ls.append(item)
+
         return PaginatedData(
             ls,
-            prev=self._queriable.has_before(start),
-            next=self._queriable.has_beyond(end-1)
+            prev=has_before,
+            next=has_beyond,
         )

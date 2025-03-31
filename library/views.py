@@ -14,16 +14,16 @@ from django.utils import http as httputils
 
 from . import serde
 from .constants import GlobalConstants as GC
-from .controllers import BookCopiesController, AllBookDataGetter, CartItemsController, PaginatedBookDataGetter
+from .controllers import BookController, BookCopyController, CartItemController
+from .pagination import Pagination, PaginatedData
 from .models import Book
-from .queriable import DataGetter
 
 
 def index(request):
-    books = AllBookDataGetter().get_data()
+    books = BookController.books()
     context = {"books": []}
     for i, book in enumerate(books, 1):
-        book_copies_count = len(BookCopiesController.get(book_id=book.id))
+        book_copies_count = len(list(BookCopyController.get_copies_by_book_id(book_id=book.id)))
         authors = ", ".join(book.author.values_list("name", flat=True))
         context["books"].append(
             {
@@ -55,27 +55,37 @@ def signup(request: HttpRequest):
 # /library/books?page=1&per_page=50&search_by=[author|title]&search_str=abc
 class BooksView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
-        data_getter: DataGetter[Book] = AllBookDataGetter()
+        result = BookController.books()
 
-        # handle filtering
-        
+        if "order" in request.GET:
+            order_type = request.GET["order"]
+            result = result.order(order_type)
+
+        if "search_str" in request.GET:
+            assert "search_by" in request.GET
+            search_str = request.GET["search_str"]
+            search_by = request.GET["search_by"]
+            filter_data = {
+                search_by: {
+                    "value": search_str,
+                    "matchby": "contains",
+                }
+            }
+            result = result.filter(filter_data)
+
         # handle pagination
         page = int(request.GET.get("page") or GC.default_page)
         perpage = int(request.GET.get("per_page") or GC.default_perpage)
-        data_getter = PaginatedBookDataGetter(data_getter, page, perpage)
-        items = data_getter.get_data()
-        has_next = data_getter.has_beyond()
-        has_prev = data_getter.has_before()
+        paginated_data: PaginatedData[Book] = Pagination(page, perpage).paginate(result)
 
         prev_link = ""
         next_link = ""
-        if has_next:
+        if paginated_data.next:
             q = dict(**request.GET)
             q["page"] = page + 1
             next_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
 
-        if has_prev:
-            print(f"{has_prev=}")
+        if paginated_data.prev:
             q = dict(**request.GET)
             q["page"] = page - 1
             prev_link = f"{request.path}?{httputils.urlencode(q, doseq=True)}"
@@ -83,7 +93,7 @@ class BooksView(View):
         return HttpResponse(
             json.dumps(
                 {
-                    "books": items,
+                    "books": paginated_data.items,
                     "next": next_link,
                     "prev": prev_link,
                 },
@@ -102,7 +112,7 @@ class CartItemsView(View):
         if not request.user.is_authenticated:
             # TODO: handle this case in a more sophisticated way.
             return HttpResponse("Unauthorized", status=401)
-        cart_items = CartItemsController.get_cartitems(request.user)
+        cart_items = CartItemController.cart_items(request.user)
         print(cart_items)
         context = {"cart_items": []}
         for i, item in enumerate(cart_items, 1):
@@ -131,10 +141,10 @@ class CartItemsView(View):
         if "bookid" not in body:
             return HttpResponseBadRequest("bookid not provided in the request")
         bookid = body["bookid"]
-        book_copies = BookCopiesController.get(book_id=bookid)
+        book_copies = list(BookCopyController.get_copies_by_book_id(book_id=bookid))
         if len(book_copies) == 0:
             return HttpResponse("Book copies not available", status=409)
-        CartItemsController.add_cartitem(request.user, book_copies[0].id)
+        CartItemController.add_cart_item(request.user, book_copies[0].id)
         return HttpResponse("Successful")
 
 
@@ -144,5 +154,5 @@ class CartItemView(View):
             return HttpResponseForbidden(
                 "as of now, only self userid is permitted by the server."
             )
-        CartItemsController.delete_cartitem(request.user, itemid)
+        CartItemController.delete_cart_item(request.user, itemid)
         return HttpResponse("Successful")
