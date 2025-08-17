@@ -116,3 +116,11 @@ Design
         - operations
             - get_product_category()
             - get_cost()
+
+workflows:
+- book lending
+    - lirarian login
+    - check if borrower exists
+    - create lending transaction
+    - update lending transaction
+
