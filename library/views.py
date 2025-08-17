@@ -12,8 +12,10 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.utils import http as httputils
+from django.utils import timezone
 from django.views import View
 
+from . import models
 from . import serde
 from .constants import GlobalConstants as GC
 from .controllers import (
@@ -25,8 +27,9 @@ from .controllers import (
     FilteredCartItemDataGetter,
     AllCartItemDataGetter,
 )
-from .models import Book, CartItem
+from .models import Book, CartItem, BookCopy
 from .pagination import PaginatedData, Pagination
+from datetime import date
 
 
 class Utils:
@@ -234,3 +237,29 @@ class CartItemView(View):
             )
         CartItemsController.delete_cartitem(request.user, itemid)
         return HttpResponse("Successful")
+
+
+def lend_books(request: HttpRequest):
+    member_id = request.body.get("member_id")
+    if member_id is None or User.objects.get(member_id) is None:
+        print("member does not exist")
+        raise Exception(f"member {member_id} does not exist")
+    book_copies = request.body.get("book_copies")
+    if book_copies is None or len(book_copies) == 0:
+        raise Exception("invalid request. book_copies is mandatory")
+    for book_copy in book_copies:
+        if BookCopy.objects.get(book_copy) is None:
+            raise Exception("book copy {book_copy} does not exist")
+    transaction = models.Transaction.objects.create(
+        member_id=member_id,
+        transaction_status=models.TransactionStatus.PENDING,
+        transaction_datetime=timezone.now(),
+        payment_id=None,
+    )
+    for book_copy in book_copies:
+        models.BookRent.objects.create(
+            bookcopy_id=book_copy,
+            start_date=date.today(),
+            transaction_id=transaction,
+            status=models.BookRentStatus.BORROWED,
+        )

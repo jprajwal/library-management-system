@@ -2,11 +2,11 @@ with import <nixpkgs> {};
 let 
 	setuptools = pkgs.python312Packages.buildPythonPackage {
 		name = "setuptools";
-		version = "61.0.0";
+		version = "69.0.0";
 		pyproject = true;
 		src = pkgs.fetchurl {
-			url = "https://files.pythonhosted.org/packages/4d/5b/dc575711b6b8f2f866131a40d053e30e962e633b332acf7cd2c24843d83d/setuptools-69.2.0.tar.gz";
-			sha256 = "sha256-D/QYP49CzY+jrOoWxFIFUhpO8o9zxjkdiiXpKJMTTy4=";
+			url = "https://files.pythonhosted.org/packages/91/43/4121cf96ed3a2d68d862663552d8044e1d987d716b6a065ab53cd4d4640f/setuptools-69.0.0.tar.gz";
+			sha256 = "sha256-TGXU94keWwRukUaRO4cJgUTeLKISj7wQE1uFVqbd2UY=";
 		};
 	};
 	django = pkgs.python312Packages.buildPythonPackage {
@@ -25,10 +25,26 @@ let
 			pkgs.python312Packages.sqlparse
 		];
 	};
+	django-extensions = pkgs.python312Packages.buildPythonPackage {
+		name = "django-extensions";
+		version = "3.2.3";
+		pyproject = true;
+		src = pkgs.fetchurl {
+			url = "https://github.com/django-extensions/django-extensions/archive/refs/tags/3.2.3.tar.gz";
+			sha256 = "sha256-xw1nJxtzpFxlFcpUsQvwk2EDVzCopgNsyggh+zD5/9o=";
+		};
+		build-system = [
+			setuptools
+		];
+		dependencies = [
+			django
+		];
+	};
 in mkShell {
 	packages = [
 		(python312.withPackages (ps: [
 			django
+			django-extensions
 			ps.python-lsp-server
 			ps.pylsp-mypy
 			ps.pyls-isort

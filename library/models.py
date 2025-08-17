@@ -30,16 +30,60 @@ class BookCopy(models.Model):
         return self.book_id.id
 
 
-class Member(models.Model):
-    name = models.TextField()
-    email_id = models.EmailField()
+class PaymentStatus(models.TextChoices):
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILURE = "failure"
+
+
+class Payment(models.Model):
+    payment_datetime = models.DateTimeField()
+    payment_status = models.CharField(
+        choices=PaymentStatus,
+        default=PaymentStatus.PENDING,
+        max_length=10,
+    )
+
+
+class TransactionStatus(models.TextChoices):
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILURE = "failure"
+
+
+class Transaction(models.Model):
+    member_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_status = models.CharField(
+        choices=TransactionStatus,
+        default=TransactionStatus.PENDING,
+        max_length=10,
+    )
+    transaction_datetime = models.DateTimeField()
+    payment_id = models.ForeignKey(
+        Payment, on_delete=models.RESTRICT, null=True)
+
+
+class BookRentStatus(models.TextChoices):
+    BORROWED = "borrowed"
+    RETURNED = "returned"
 
 
 class BookRent(models.Model):
-    member_id = models.ForeignKey(Member, on_delete=models.CASCADE)
-    bookcopy_id = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
+    bookcopy_id = models.ForeignKey(
+        BookCopy, on_delete=models.CASCADE, unique=True)
     start_date = models.DateField()
-    due_date = models.DateField()
+    due_date = models.DateField(null=True)
+    cost = models.IntegerField(null=True)
+    transaction_id = models.ForeignKey(
+        Transaction,
+        on_delete=models.RESTRICT,
+        null=True,
+    )
+    status = models.CharField(
+        choices=BookRentStatus,
+        default=BookRentStatus.BORROWED,
+        max_length=10,
+    )
 
 
 class CartItemType(models.TextChoices):
