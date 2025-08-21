@@ -240,25 +240,28 @@ class CartItemView(View):
 
 
 def lend_books(request: HttpRequest):
-    member_id = request.body.get("member_id")
-    if member_id is None or User.objects.get(member_id) is None:
+    if request.method == "GET":
+        return render(request, template_name="book-lending.html")
+    print(f"{request.POST}")
+    member_id = request.POST.get("member_id")
+    if member_id is None or User.objects.get(pk=member_id) is None:
         print("member does not exist")
         raise Exception(f"member {member_id} does not exist")
-    book_copies = request.body.get("book_copies")
+    book_copies = request.POST.get("book_copies")
     if book_copies is None or len(book_copies) == 0:
         raise Exception("invalid request. book_copies is mandatory")
     for book_copy in book_copies:
-        if BookCopy.objects.get(book_copy) is None:
+        if BookCopy.objects.get(pk=book_copy) is None:
             raise Exception("book copy {book_copy} does not exist")
     transaction = models.Transaction.objects.create(
-        member_id=member_id,
-        transaction_status=models.TransactionStatus.PENDING,
+        member_id=User.objects.get(pk=member_id),
+        transaction_status=models.TransactionStatus.SUCCESS,
         transaction_datetime=timezone.now(),
         payment_id=None,
     )
     for book_copy in book_copies:
         models.BookRent.objects.create(
-            bookcopy_id=book_copy,
+            bookcopy_id=BookCopy.objects.get(pk=book_copy),
             start_date=date.today(),
             transaction_id=transaction,
             status=models.BookRentStatus.BORROWED,

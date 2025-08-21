@@ -3,13 +3,14 @@
 {%block body%}
   <h2>Book rent Form</h2>
 
-  <form id="rent-form" action="/lend-books" method="post">
+  <form id="rent-form" action="/library/lend-books" method="post">
+    {% csrf_token %}
     <label for="member-id">Member ID:</label>
     <input type="number" id="member-id" name="member_id" required><br><br>
 
     <div id="book-copy-list">
       <label>Book Copies:</label><br>
-      <input type="text" name="book_copies[]" class="book-copy-input" required>
+      <input type="text" name="book_copies" class="book-copy-input" required>
     </div>
 
     <button type="button" onclick="addBookCopyInput()">Add Another Book Copy</button><br><br>
@@ -22,7 +23,7 @@
       const container = document.getElementById('book-copy-list');
       const input = document.createElement('input');
       input.type = 'text';
-      input.name = 'book_copies[]'; // allows multiple values to be sent as an array
+      input.name = 'book_copies'; // allows multiple values to be sent as an array
       input.className = 'book-copy-input';
       container.appendChild(input);
     }
