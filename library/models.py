@@ -69,7 +69,7 @@ class BookRentStatus(models.TextChoices):
 
 
 class BookRent(models.Model):
-    bookcopy_id = models.ForeignKey(
+    bookcopy_id = models.OneToOneField(
         BookCopy, on_delete=models.CASCADE, unique=True)
     start_date = models.DateField()
     due_date = models.DateField(null=True)
