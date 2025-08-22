@@ -1,0 +1,16 @@
+{%extends "base.html"%}
+{% load static %}
+{%block body%}
+<div class="flxc centered" style="height: 91vh;">
+        <div class="flxc centered" style="background-color: gray; height: 200px; width: 300px; border-radius: 10px;">
+                <div class="flxc centered" style="flex-grow: 2">
+                        <p>{{msg}}</p>
+                </div>
+                <div class="flxc centered" style="flex-grow: 1">
+                        <form action="{{url}}" method={{method}}>
+                                <input type="submit" id="form-success-home-button" value="home" style="padding: 10px 10px; border-radius: 10px"></input>
+                        </form
+                </div>
+        </div>
+</div>
+{%endblock%}

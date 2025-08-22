@@ -1,31 +1,23 @@
 import json
+from datetime import date
 from typing import Any
 
 from django.contrib.auth.models import User
-from django.db.models import F
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseForbidden,
-    HttpResponseServerError,
-)
+from django.http import (HttpRequest, HttpResponse, HttpResponseForbidden,
+                         HttpResponseServerError)
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import http as httputils
+from django.utils import timezone
 from django.views import View
 
-from . import serde
+from . import models, serde
 from .constants import GlobalConstants as GC
-from .controllers import (
-    AllBookDataGetter,
-    BookCopiesController,
-    CartItemsController,
-    FilteredBookDataGetter,
-    OrderedBookDataGetter,
-    FilteredCartItemDataGetter,
-    AllCartItemDataGetter,
-)
-from .models import Book, CartItem
+from .controllers import (AllBookDataGetter, AllCartItemDataGetter,
+                          BookCopiesController, CartItemsController,
+                          FilteredBookDataGetter, FilteredCartItemDataGetter,
+                          OrderedBookDataGetter)
+from .models import Book, BookCopy, CartItem
 from .pagination import PaginatedData, Pagination
 
 
@@ -234,3 +226,88 @@ class CartItemView(View):
             )
         CartItemsController.delete_cartitem(request.user, itemid)
         return HttpResponse("Successful")
+
+
+def lend_books(request: HttpRequest):
+    try:
+        if request.method == "GET":
+            return render(request, template_name="book-lending.html")
+        print(f"{request.POST}")
+        member_id = request.POST.get("member_id")
+        if member_id is None or User.objects.get(pk=member_id) is None:
+            print("member does not exist")
+            return form_failure(
+                request,
+                url=f"{reverse('lend-books')}",
+                method="get",
+                msg=f"member {member_id} does not exist"
+            )
+        book_copies = request.POST.get("book_copies")
+        if book_copies is None or len(book_copies) == 0:
+            return form_failure(
+                request,
+                url=f"{reverse('lend-books')}",
+                method="get",
+                msg="invalid request. book_copies is mandatory"
+            )
+        for book_copy in book_copies:
+            if BookCopy.objects.get(pk=book_copy) is None:
+                return form_failure(
+                    request,
+                    url=f"{reverse('lend-books')}",
+                    method="get",
+                    msg=f"book copy {book_copy} does not exist",
+                )
+        transaction = models.Transaction.objects.create(
+            member_id=User.objects.get(pk=member_id),
+            transaction_status=models.TransactionStatus.SUCCESS,
+            transaction_datetime=timezone.now(),
+            payment_id=None,
+        )
+        for book_copy in book_copies:
+            models.BookRent.objects.create(
+                bookcopy_id=BookCopy.objects.get(pk=book_copy),
+                start_date=date.today(),
+                transaction_id=transaction,
+                status=models.BookRentStatus.BORROWED,
+            )
+        return render(
+            request,
+            template_name="form-success.html",
+            context={
+                "url": f"{reverse('lend-books')}",
+                "method": "get",
+                "msg": GC.form_success_msg,
+            },
+        )
+    except Exception as exc:
+        return form_failure(
+            request,
+            url=f"{reverse('lend-books')}",
+            method="get",
+            msg=f"Error: {str(exc)}"
+        )
+
+
+def form_success(request: HttpRequest, url: str, method: str, msg: str | None):
+    return render(
+        request,
+        template_name="form-success.html",
+        context={
+            "url": url,
+            "method": method,
+            "msg": msg or GC.form_success_msg,
+        },
+    )
+
+
+def form_failure(request: HttpRequest, url: str, method: str, msg: str | None):
+    return render(
+        request,
+        template_name="form-failure.html",
+        context={
+            "url": url,
+            "method": method,
+            "msg": msg or GC.form_failure_msg,
+        },
+    )

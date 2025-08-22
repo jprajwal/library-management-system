@@ -46,4 +46,5 @@ urlpatterns = [
         view=views.CartItemView.as_view(), name="cart-item",
     ),
     path("library/books", views.BooksView.as_view(), name="books-view"),
+    path("library/lend-books", views.lend_books, name="lend-books"),
 ]
