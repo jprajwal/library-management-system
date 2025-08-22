@@ -1,7 +1,6 @@
 .venv
 .dmypy.json
 db.sqlite3
-manage.py
 __pycache__
 .python-version
 library_management_system.egg-info
