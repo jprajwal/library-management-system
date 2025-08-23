@@ -72,12 +72,19 @@ class BookRent(models.Model):
     bookcopy_id = models.OneToOneField(
         BookCopy, on_delete=models.CASCADE, unique=True)
     start_date = models.DateField()
-    due_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
     cost = models.IntegerField(null=True)
     transaction_id = models.ForeignKey(
         Transaction,
         on_delete=models.RESTRICT,
         null=True,
+        related_name='rented_books',
+    )
+    return_transaction_id = models.ForeignKey(
+        Transaction,
+        on_delete=models.RESTRICT,
+        null=True,
+        related_name='returned_books',
     )
     status = models.CharField(
         choices=BookRentStatus,
