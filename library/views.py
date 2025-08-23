@@ -17,8 +17,9 @@ from .controllers import (AllBookDataGetter, AllCartItemDataGetter,
                           BookCopiesController, CartItemsController,
                           FilteredBookDataGetter, FilteredCartItemDataGetter,
                           OrderedBookDataGetter)
-from .models import Book, BookCopy, CartItem
+from .models import Book, BookCopy, CartItem, BookRent, Payment, PaymentStatus
 from .pagination import PaginatedData, Pagination
+from . import payment
 
 
 class Utils:
@@ -49,7 +50,7 @@ class Utils:
                 if key in request.GET:
                     filters.update(
                         {
-                            key: {
+key: {
                                 "matchby": matchby,
                                 "value": request.GET[key],
                             }
@@ -284,6 +285,123 @@ def lend_books(request: HttpRequest):
         return form_failure(
             request,
             url=f"{reverse('lend-books')}",
+            method="get",
+            msg=f"Error: {str(exc)}"
+        )
+
+
+def return_books(request: HttpRequest):
+    try:
+        if request.method == "GET":
+            return render(request, template_name="book-return.html")
+        print(f"{request.POST}")
+        member_id = request.POST.get("member_id")
+        if member_id is None or User.objects.get(pk=member_id) is None:
+            print("member does not exist")
+            return form_failure(
+                request,
+                url=f"{reverse('return-books')}",
+                method="get",
+                msg=f"member {member_id} does not exist"
+            )
+        book_copies = request.POST.get("book_copies")
+        if book_copies is None or len(book_copies) == 0:
+            return form_failure(
+                request,
+                url=f"{reverse('return-books')}",
+                method="get",
+                msg="invalid request. book_copies is mandatory"
+            )
+
+        cost = 0
+        for book_copy in book_copies:
+            copy = BookCopy.objects.get(pk=book_copy)
+            if copy is None:
+                return form_failure(
+                    request,
+                    url=f"{reverse('return-books')}",
+                    method="get",
+                    msg=f"book copy {book_copy} does not exist",
+                )
+            elif BookRent.objects.get(bookcopy_id=book_copy) is None:
+                return form_failure(
+                    request,
+                    url=f"{reverse('return-books')}",
+                    method="get",
+                    msg=f"book copy {book_copy} is not borrowed",
+                )
+            book = copy.book_id
+            cost += book.rent_cost
+
+        payment_obj = models.Payment.objects.create(
+            payment_datetime=timezone.now(),
+        )
+        payment_id = payment_obj.pk
+
+        def callback(status):
+            p = Payment.objects.get(pk=payment_id)
+            assert p is not None
+            transaction = models.Transaction.objects.get(payment_id=payment_id)
+            assert transaction is not None
+            match status:
+                case payment.PaymentStatus.SUCCESS:
+                    p.payment_status = PaymentStatus.SUCCESS
+                case payment.PaymentStatus.FAILURE:
+                    p.payment_status = PaymentStatus.FAILURE
+                    transaction.transaction_status = models.TransactionStatus.FAILURE
+                case payment.PaymentStatus.PENDING:
+                    transaction.transaction_status = models.TransactionStatus.FAILURE
+                    p.save()
+                    transaction.save()
+                    raise Exception("unreachable code!")
+            p.save()
+            transaction.save()
+            for book_rent in models.BookRent.objects.filter(return_transaction_id=transaction):
+                try:
+                    if book_rent.status != models.BookRentStatus.BORROWED:
+                        raise Exception(f"data conlfict: book copy {book_rent.bookcopy_id.pk} is already returned")
+                    book_rent.status = models.BookRentStatus.RETURNED
+                    book_rent.end_date = date.today()
+                    book_rent.cost = ((book_rent.end_date - book_rent.start_date).days / 30) * book_rent.bookcopy_id.book_id.rent_cost
+                    book_rent.save()
+                except Exception as exc:
+                    transaction.transaction_status = models.TransactionStatus.FAILURE
+                    transaction.save()
+                    print(f"exception occured: {exc}")
+                    raise
+            return
+
+        payment.DummyPaymentManager().request(
+            payment.Cost(cost),
+            payment.get_bank_details(),
+            callback,
+        )
+        transaction = models.Transaction.objects.create(
+            member_id=User.objects.get(pk=member_id),
+            transaction_status=models.TransactionStatus.PENDING,
+            transaction_datetime=timezone.now(),
+            payment_id=payment_obj,
+        )
+        for book_copy in book_copies:
+            book_rent_obj = models.BookRent.objects.get(
+                bookcopy_id=BookCopy.objects.get(pk=book_copy),
+            )
+            book_rent_obj.return_transaction_id = transaction
+            book_rent_obj.save()
+
+        return render(
+            request,
+            template_name="form-success.html",
+            context={
+                "url": f"{reverse('return-books')}",
+                "method": "get",
+                "msg": GC.form_success_msg,
+            },
+        )
+    except Exception as exc:
+        return form_failure(
+            request,
+            url=f"{reverse('return-books')}",
             method="get",
             msg=f"Error: {str(exc)}"
         )
