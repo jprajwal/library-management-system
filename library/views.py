@@ -50,7 +50,7 @@ class Utils:
                 if key in request.GET:
                     filters.update(
                         {
-key: {
+                            key: {
                                 "matchby": matchby,
                                 "value": request.GET[key],
                             }
@@ -340,42 +340,21 @@ def return_books(request: HttpRequest):
 
         def callback(status):
             p = Payment.objects.get(pk=payment_id)
-            assert p is not None
-            transaction = models.Transaction.objects.get(payment_id=payment_id)
-            assert transaction is not None
             match status:
                 case payment.PaymentStatus.SUCCESS:
                     p.payment_status = PaymentStatus.SUCCESS
                 case payment.PaymentStatus.FAILURE:
                     p.payment_status = PaymentStatus.FAILURE
-                    transaction.transaction_status = models.TransactionStatus.FAILURE
                 case payment.PaymentStatus.PENDING:
-                    transaction.transaction_status = models.TransactionStatus.FAILURE
-                    p.save()
-                    transaction.save()
                     raise Exception("unreachable code!")
             p.save()
-            transaction.save()
-            for book_rent in models.BookRent.objects.filter(return_transaction_id=transaction):
-                try:
-                    if book_rent.status != models.BookRentStatus.BORROWED:
-                        raise Exception(f"data conlfict: book copy {book_rent.bookcopy_id.pk} is already returned")
-                    book_rent.status = models.BookRentStatus.RETURNED
-                    book_rent.end_date = date.today()
-                    book_rent.cost = ((book_rent.end_date - book_rent.start_date).days / 30) * book_rent.bookcopy_id.book_id.rent_cost
-                    book_rent.save()
-                except Exception as exc:
-                    transaction.transaction_status = models.TransactionStatus.FAILURE
-                    transaction.save()
-                    print(f"exception occured: {exc}")
-                    raise
-            return
 
-        payment.DummyPaymentManager().request(
-            payment.Cost(cost),
-            payment.get_bank_details(),
-            callback,
-        )
+        cost_obj = payment.Cost(cost)
+        # payment.DummyPaymentManager().request(
+        #     cost_obj,
+        #     payment.get_bank_details(),
+        #     callback,
+        # )
         transaction = models.Transaction.objects.create(
             member_id=User.objects.get(pk=member_id),
             transaction_status=models.TransactionStatus.PENDING,
@@ -391,11 +370,12 @@ def return_books(request: HttpRequest):
 
         return render(
             request,
-            template_name="form-success.html",
+            template_name="payment.html",
             context={
-                "url": f"{reverse('return-books')}",
-                "method": "get",
-                "msg": GC.form_success_msg,
+                "msg": f"Cost: {cost_obj.whole_num_part}.{cost_obj.fraction_part}",
+                "payment_id": payment_id,
+                "transaction_id": transaction.pk,
+                "from_url": reverse("return-books"),
             },
         )
     except Exception as exc:
@@ -405,6 +385,65 @@ def return_books(request: HttpRequest):
             method="get",
             msg=f"Error: {str(exc)}"
         )
+
+
+def update_payment(request: HttpRequest):
+    try:
+        if request.method != "POST":
+            raise Exception(f"method: {request.method} not supported")
+        payment_id = request.POST["payment_id"]
+        transaction_id = request.POST["transaction_id"]
+        transaction = models.Transaction.objects.get(pk=transaction_id)
+        if transaction is None:
+            raise Exception("transaction not found")
+        payment_status = request.POST["payment_status"]
+        payment_obj = models.Payment.objects.get(pk=payment_id)
+        if payment_obj is None:
+            raise Exception("Unkown payment id")
+        if payment_obj.payment_status != models.PaymentStatus.PENDING:
+            raise Exception("payment is already finalized")
+        if payment_status == "success":
+            payment_obj.payment_status = models.PaymentStatus.SUCCESS
+            payment_obj.save()
+        elif payment_status == "failure":
+            payment_obj.payment_status = models.PaymentStatus.FAILURE
+            payment_obj.save()
+        else:
+            print(f"payment status: {payment_status}")
+            raise Exception("unknown payment status provided")
+        for book_rent in models.BookRent.objects.filter(return_transaction_id=transaction):
+            try:
+                if book_rent.status != models.BookRentStatus.BORROWED:
+                    raise Exception(f"data conlfict: book copy {book_rent.bookcopy_id.pk} is already returned")
+                book_rent.status = models.BookRentStatus.RETURNED
+                book_rent.end_date = date.today()
+                book_rent.cost = ((book_rent.end_date - book_rent.start_date).days / 30) * book_rent.bookcopy_id.book_id.rent_cost
+                book_rent.save()
+            except Exception as exc:
+                transaction.transaction_status = models.TransactionStatus.FAILURE
+                transaction.save()
+                print(f"exception occured: {exc}")
+                raise
+
+        transaction.transaction_status = models.TransactionStatus.SUCCESS
+        transaction.save()
+        return form_success(
+            request,
+            url=reverse("return-books"),
+            method="GET",
+            msg=GC.form_success_msg,
+        )
+    except Exception as exc:
+        transaction.transaction_status = models.TransactionStatus.FAILURE
+        transaction.save()
+        print(f"exception occured: {exc}")
+        return form_failure(
+            request,
+            url=f"{request.POST["from_url"]}",
+            method="get",
+            msg=f"Error: {str(exc)}"
+        )
+
 
 
 def form_success(request: HttpRequest, url: str, method: str, msg: str | None):
