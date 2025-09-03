@@ -261,25 +261,35 @@ def lend_books(request: HttpRequest):
                 )
         transaction = models.Transaction.objects.create(
             member_id=User.objects.get(pk=member_id),
-            transaction_status=models.TransactionStatus.SUCCESS,
+            transaction_status=models.TransactionStatus.PENDING,
             transaction_datetime=timezone.now(),
             payment_id=None,
         )
         for book_copy in book_copies:
+            if models.BookRent.objects.filter(
+                bookcopy_id=book_copy, status=models.BookRentStatus.BORROWED
+            ).count() > 0:
+                print(f"error: book: {book_copy} is already borrowed")
+                transaction.status = models.TransactionStatus.FAILURE
+                transaction.save()
+                return form_failure(
+                    request,
+                    reverse('lend-books'),
+                    "get",
+                    f"book: {book_copy} is already borrowed",
+                )
             models.BookRent.objects.create(
                 bookcopy_id=BookCopy.objects.get(pk=book_copy),
                 start_date=date.today(),
                 transaction_id=transaction,
                 status=models.BookRentStatus.BORROWED,
             )
-        return render(
+        transaction.status = models.TransactionStatus.SUCCESS
+        transaction.save()
+        return form_success(
             request,
-            template_name="form-success.html",
-            context={
-                "url": f"{reverse('lend-books')}",
-                "method": "get",
-                "msg": GC.form_success_msg,
-            },
+            reverse('lend-books'),
+            "get",
         )
     except Exception as exc:
         return form_failure(
@@ -323,7 +333,7 @@ def return_books(request: HttpRequest):
                     method="get",
                     msg=f"book copy {book_copy} does not exist",
                 )
-            elif BookRent.objects.get(bookcopy_id=book_copy) is None:
+            elif BookRent.objects.filter(bookcopy_id=book_copy).count() == 0:
                 return form_failure(
                     request,
                     url=f"{reverse('return-books')}",
@@ -338,23 +348,7 @@ def return_books(request: HttpRequest):
         )
         payment_id = payment_obj.pk
 
-        def callback(status):
-            p = Payment.objects.get(pk=payment_id)
-            match status:
-                case payment.PaymentStatus.SUCCESS:
-                    p.payment_status = PaymentStatus.SUCCESS
-                case payment.PaymentStatus.FAILURE:
-                    p.payment_status = PaymentStatus.FAILURE
-                case payment.PaymentStatus.PENDING:
-                    raise Exception("unreachable code!")
-            p.save()
-
         cost_obj = payment.Cost(cost)
-        # payment.DummyPaymentManager().request(
-        #     cost_obj,
-        #     payment.get_bank_details(),
-        #     callback,
-        # )
         transaction = models.Transaction.objects.create(
             member_id=User.objects.get(pk=member_id),
             transaction_status=models.TransactionStatus.PENDING,
@@ -364,6 +358,7 @@ def return_books(request: HttpRequest):
         for book_copy in book_copies:
             book_rent_obj = models.BookRent.objects.get(
                 bookcopy_id=BookCopy.objects.get(pk=book_copy),
+                status=models.BookRentStatus.BORROWED,
             )
             book_rent_obj.return_transaction_id = transaction
             book_rent_obj.save()
@@ -408,6 +403,7 @@ def update_payment(request: HttpRequest):
         elif payment_status == "failure":
             payment_obj.payment_status = models.PaymentStatus.FAILURE
             payment_obj.save()
+            raise Exception("payment failed")
         else:
             print(f"payment status: {payment_status}")
             raise Exception("unknown payment status provided")
@@ -445,8 +441,11 @@ def update_payment(request: HttpRequest):
         )
 
 
-
-def form_success(request: HttpRequest, url: str, method: str, msg: str | None):
+def form_success(
+    request: HttpRequest,
+    url: str, method: str,
+    msg: str | None = None,
+):
     return render(
         request,
         template_name="form-success.html",
@@ -458,7 +457,12 @@ def form_success(request: HttpRequest, url: str, method: str, msg: str | None):
     )
 
 
-def form_failure(request: HttpRequest, url: str, method: str, msg: str | None):
+def form_failure(
+    request: HttpRequest,
+        url: str,
+        method: str,
+        msg: str | None = None
+):
     return render(
         request,
         template_name="form-failure.html",
