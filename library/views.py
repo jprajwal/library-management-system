@@ -3,6 +3,7 @@ from datetime import date
 from typing import Any
 
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.http import (HttpRequest, HttpResponse, HttpResponseForbidden,
                          HttpResponseServerError)
 from django.shortcuts import redirect, render
@@ -229,6 +230,7 @@ class CartItemView(View):
         return HttpResponse("Successful")
 
 
+@login_required
 def lend_books(request: HttpRequest):
     try:
         if request.method == "GET":
@@ -270,7 +272,7 @@ def lend_books(request: HttpRequest):
                 bookcopy_id=book_copy, status=models.BookRentStatus.BORROWED
             ).count() > 0:
                 print(f"error: book: {book_copy} is already borrowed")
-                transaction.status = models.TransactionStatus.FAILURE
+                transaction.transaction_status = models.TransactionStatus.FAILURE
                 transaction.save()
                 return form_failure(
                     request,
@@ -284,7 +286,7 @@ def lend_books(request: HttpRequest):
                 transaction_id=transaction,
                 status=models.BookRentStatus.BORROWED,
             )
-        transaction.status = models.TransactionStatus.SUCCESS
+        transaction.transaction_status = models.TransactionStatus.SUCCESS
         transaction.save()
         return form_success(
             request,
@@ -300,6 +302,7 @@ def lend_books(request: HttpRequest):
         )
 
 
+@login_required
 def return_books(request: HttpRequest):
     try:
         if request.method == "GET":
@@ -382,6 +385,7 @@ def return_books(request: HttpRequest):
         )
 
 
+@login_required
 def update_payment(request: HttpRequest):
     try:
         if request.method != "POST":
@@ -439,6 +443,32 @@ def update_payment(request: HttpRequest):
             method="get",
             msg=f"Error: {str(exc)}"
         )
+
+
+@login_required
+def get_borrowed_books_of_user(request: HttpRequest):
+    if request.method == "GET":
+        return render(
+            request,
+            template_name="borrowed-books-form.html",
+        )
+    member_id = request.POST.get("member_id")
+    if member_id is None:
+        raise Exception("member_id parameter is not provided in the request")
+    book_rent_objs = models.BookRent.objects.filter(
+        transaction_id__member_id=member_id,
+        transaction_id__transaction_status=models.TransactionStatus.SUCCESS,
+        status=models.BookRentStatus.BORROWED,
+    )
+    rented_books = list(
+        map(lambda x: serde.serialize_book(x.bookcopy_id.book_id),
+            book_rent_objs.all())
+    )
+    return render(
+        request,
+        template_name="borrowed-books.html",
+        context={"books": rented_books},
+    )
 
 
 def form_success(
