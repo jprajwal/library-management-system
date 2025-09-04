@@ -49,4 +49,5 @@ urlpatterns = [
     path("library/lend-books", views.lend_books, name="lend-books"),
     path("library/return-books", views.return_books, name="return-books"),
     path("library/update-payment", views.update_payment, name="update-payment"),
+    path("library/borrowed-books", views.get_borrowed_books_of_user, name="borrowed-books"),
 ]
